@@ -7,8 +7,8 @@ and pointer interaction.
 
 - Static or animated underlines with configurable amplitude, wavelength, gap,
 	stroke width, color, and speed.
-- Letter animation that preserves grapheme clusters, including combining marks
-	and emoji sequences.
+- CodePen-style full-run glyph displacement that preserves shaping, including
+  combining marks, ligatures, RTL text, and emoji sequences.
 - Pointer interactions for highlighting, lifting, and magnetically pulling nearby letters.
 - Keyboard-focus activation through `hoverOnly` when interaction is configured.
 - Standard Flutter text layout options, including wrapping, alignment,
@@ -52,10 +52,11 @@ const SquigglyText(
 )
 ```
 
-Use `SquigglyAnimationStyle.letters` to wriggle graphemes in place, or
-`SquigglyAnimationStyle.waveAndLetters` to combine that motion with the
-underline. Letter motion scales with font size and `amplitude` so the glyphs
-stay readable and visibly alive. Animation parameters are validated, and
+Use `SquigglyAnimationStyle.letters` to tremble the painted text in place, or
+`SquigglyAnimationStyle.waveAndLetters` to combine that displacement with the
+underline. Letter displacement scales with font size using a shared turbulence
+field; `amplitude` remains an underline-only setting. Animation parameters are
+validated, and
 `respectReducedMotion` defaults to `true` so platform reduced-motion
 preferences disable the internal ticker and pointer response.
 
@@ -70,8 +71,8 @@ const SquigglyText(
 )
 ```
 
-`highlight` brightens nearby graphemes, while `liftLetters` and `magnetic` lift
-nearby graphemes with a bounded falloff. When animation is enabled, `hoverOnly`
+`highlight` is reserved for future visual polish, while `liftLetters` and
+`magnetic` can influence the shared painted field with a bounded falloff. When animation is enabled, `hoverOnly`
 waits for pointer input or keyboard focus. Configured interaction participates
 in keyboard focus traversal; the default static widget does not request focus.
 
@@ -87,7 +88,7 @@ The main public API is the `SquigglyText` widget:
 | --- | --- |
 | `style` and `squiggleColor` | Configure text and underline appearance. |
 | `amplitude`, `wavelength`, `strokeWidth`, and `gap` | Configure underline geometry. |
-| `animationStyle`, `speed`, `fluidity`, and `stagger` | Configure animation. |
+| `animationStyle`, `speed`, `fluidity`, and `stagger` | Configure animation. `speed` controls wave cycles per second and the letter displacement cadence. |
 | `hoverBehavior`, `hoverRadius`, and `hoverOnly` | Configure pointer and focus interaction. |
 | `respectReducedMotion` and `pauseWhenNotVisible` | Control when animation runs. |
 | `semanticsLabel` | Provide an alternative accessibility label. |
@@ -98,7 +99,7 @@ reference.
 ## Example application
 
 The [`example/`](example/) directory contains an interactive preview with
-Amatic SC, glyph animation, underline geometry, color, wrapping,
+Amatic SC, glyph displacement, underline geometry, color, wrapping,
 right-to-left text, and accessibility semantics.
 
 ```shell

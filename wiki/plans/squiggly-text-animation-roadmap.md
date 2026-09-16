@@ -7,7 +7,7 @@ Evolve `SquigglyText` from a static squiggly underline into an optional, web-ins
 The feature should support:
 
 - Animated underline waves.
-- Per-grapheme letter motion when appropriate.
+- Full-run glyph displacement when enabled.
 - Configurable speed, phase staggering, and motion fluidity.
 - Pointer hover interactions on desktop and web.
 - Keyboard focus parity where hover is unavailable.
@@ -27,12 +27,11 @@ The implementation has reached the core product milestone and now includes:
 - keyboard focus participation when interaction is configured
 - reduced motion respect and lifecycle-aware pause logic
 
-The remaining work is to replace per-grapheme rigid bounce with CodePen-style
-turbulence displacement. The first letter implementation was too small; the
-course correction then made sprites bounce, which still does not match the
-reference. See
-[CodePen Glyph Displacement Plan](codepen-glyph-displacement-plan.md).
-This status reflects the current codebase as of 2026-09-16.
+Letter animation now uses the CodePen-style turbulence displacement described
+in [CodePen Glyph Displacement Plan](codepen-glyph-displacement-plan.md). The
+full shaped text run is snapshotted once per layout and displaced by a shared
+shader field; the underline remains geometric and separate. This status
+reflects the current codebase as of 2026-09-16.
 
 ## 3. Current Baseline
 

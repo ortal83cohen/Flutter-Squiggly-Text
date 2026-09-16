@@ -6,8 +6,10 @@
 
 ## Unreleased
 
-- Made `letters` and `waveAndLetters` use visible per-glyph jitter, rotation,
-	and font-size-relative amplitude instead of a 2px vertical bounce.
+- Made `letters` and `waveAndLetters` use CodePen-style shared turbulence
+	displacement of the complete shaped text run instead of bouncing letter
+	sprites. Displacement is scaled from font size and `amplitude` remains
+	underline-only.
 - Updated the example preview to use Amatic SC and show glyph animation by
 	default.
 - Implemented hover and keyboard focus interaction for configured widgets,

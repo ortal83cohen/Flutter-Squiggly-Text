@@ -195,7 +195,25 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('letter animation reserves space for glyph motion',
+  testWidgets('non-integer speed remains active across the old one-second wrap',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: SquigglyText(
+          'Hello',
+          animationStyle: SquigglyAnimationStyle.wave,
+          speed: 2.4,
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 990));
+    await tester.pump(const Duration(milliseconds: 20));
+
+    expect(tester.takeException(), isNull);
+    expect(tester.binding.transientCallbackCount, greaterThan(0));
+  });
+
+  testWidgets('letter displacement reserves padded space for warped ink',
       (tester) async {
     const style = TextStyle(fontSize: 48);
     await tester.pumpWidget(

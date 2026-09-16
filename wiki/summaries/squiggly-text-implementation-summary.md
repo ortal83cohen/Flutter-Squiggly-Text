@@ -8,7 +8,7 @@ The package now supports the core animation and interaction features described i
 
 - Static rendering remains the default when `animationStyle` is `none`.
 - Animated underline wave support is implemented for `wave` and `waveAndLetters`.
-- Per-grapheme animation is supported for simple and safe shaping cases with fallback to full-text painting when the text is ambiguous or unsupported.
+- Letter animation uses a full shaped-text atlas and shared turbulence displacement, with static atlas fallback when shaders are unavailable.
 - Hover interaction is available for `highlight`, `liftLetters`, and `magnetic` behaviors.
 - `hoverOnly` and focus activation are supported when interaction is configured.
 - Reduced-motion preferences are respected by default.

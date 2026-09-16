@@ -87,7 +87,7 @@ class _ExamplePageState extends State<ExamplePage> {
           ),
           const SizedBox(height: 4),
           Text(
-            'The handwriting face should wriggle in place. Use Wave + letters to keep both the glyphs and the underline moving.',
+            'The handwriting face trembles in place. Use Wave + letters to keep both the glyphs and the underline moving.',
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 20),
@@ -124,8 +124,7 @@ class _ExamplePageState extends State<ExamplePage> {
                         strokeWidth: 2,
                         textAlign: TextAlign.center,
                         animationStyle: _animationStyle,
-                        speed: 2.4,
-                        stagger: 0.9,
+                        speed: 1,
                         hoverBehavior: _hoverBehavior,
                         hoverOnly: _hoverOnly,
                         respectReducedMotion: _respectReducedMotion,
@@ -202,7 +201,7 @@ class _ExamplePageState extends State<ExamplePage> {
                     _animationStyle == SquigglyAnimationStyle.wave
                         ? 'Wave moves the underline only. Choose wave + letters to animate the glyphs.'
                         : _animationStyle == SquigglyAnimationStyle.letters
-                            ? 'Letters wriggle in place. The underline stays static.'
+                            ? 'Letters tremble in place. The underline stays static.'
                             : _animationStyle ==
                                     SquigglyAnimationStyle.waveAndLetters
                                 ? 'Glyphs and underline both animate.'
