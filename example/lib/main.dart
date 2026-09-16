@@ -104,7 +104,8 @@ class _ExamplePageState extends State<ExamplePage> {
                   const SizedBox(height: 8),
                   DecoratedBox(
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.06),
+                      color:
+                          theme.colorScheme.onSurface.withValues(alpha: 0.06),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Padding(

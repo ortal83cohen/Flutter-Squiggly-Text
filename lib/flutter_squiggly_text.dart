@@ -211,8 +211,7 @@ class _SquigglyTextState extends State<SquigglyText>
   void _handleTick(Duration tickerElapsed) {
     final previous = _lastTickerElapsed;
     if (previous != null) {
-      _elapsedSeconds.value +=
-          (tickerElapsed - previous).inMicroseconds /
+      _elapsedSeconds.value += (tickerElapsed - previous).inMicroseconds /
           Duration.microsecondsPerSecond;
     }
     _lastTickerElapsed = tickerElapsed;
@@ -346,8 +345,8 @@ class _SquigglyTextState extends State<SquigglyText>
           painter.layout(maxWidth: maxWidth);
           return SizedBox(
             width: (constraints.hasBoundedWidth
-                ? constraints.maxWidth
-                : painter.textPainter.width) +
+                    ? constraints.maxWidth
+                    : painter.textPainter.width) +
                 painter.horizontalPadding * 2,
             height: painter.height,
             child: CustomPaint(painter: painter),
@@ -433,14 +432,12 @@ class _SquigglyTextPainter extends CustomPainter {
   final SquigglyHoverBehavior hoverBehavior;
   final double hoverRadius;
 
-  List<_GraphemeLayout> _graphemes = const [];
   ui.Image? _textAtlas;
   Size _atlasLogicalSize = Size.zero;
   Object? _atlasLayoutKey;
 
   void _rebuildAtlasIfNeeded(double maxWidth) {
-    final wantsAtlas =
-        animationStyle == SquigglyAnimationStyle.letters ||
+    final wantsAtlas = animationStyle == SquigglyAnimationStyle.letters ||
         animationStyle == SquigglyAnimationStyle.waveAndLetters;
     if (!wantsAtlas) {
       _textAtlas?.dispose();
@@ -508,29 +505,18 @@ class _SquigglyTextPainter extends CustomPainter {
 
   double get _atlasPadding =>
       animationStyle == SquigglyAnimationStyle.letters ||
-          animationStyle == SquigglyAnimationStyle.waveAndLetters ||
-          hoverBehavior != SquigglyHoverBehavior.none
-        ? _maximumDisplacement.ceilToDouble() + 2
-        : 0;
+              animationStyle == SquigglyAnimationStyle.waveAndLetters ||
+              hoverBehavior != SquigglyHoverBehavior.none
+          ? _maximumDisplacement.ceilToDouble() + 2
+          : 0;
 
   double get height =>
-      textPainter.height +
-      gap +
-      amplitude +
-      strokeWidth +
-      _atlasPadding * 2;
+      textPainter.height + gap + amplitude + strokeWidth + _atlasPadding * 2;
 
   double get horizontalPadding => _atlasPadding;
 
   void layout({required double maxWidth}) {
     textPainter.layout(maxWidth: maxWidth);
-    _graphemes = const [];
-    if (hoverBehavior != SquigglyHoverBehavior.none) {
-      final graphemes = _buildGraphemeLayout();
-      if (graphemes != null) {
-        _graphemes = graphemes;
-      }
-    }
     _rebuildAtlasIfNeeded(maxWidth);
   }
 
@@ -538,7 +524,8 @@ class _SquigglyTextPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     canvas.save();
     canvas.translate(_atlasPadding, _atlasPadding);
-    if (_animatesLetters || animationStyle == SquigglyAnimationStyle.letters ||
+    if (_animatesLetters ||
+        animationStyle == SquigglyAnimationStyle.letters ||
         animationStyle == SquigglyAnimationStyle.waveAndLetters) {
       _paintAtlas(canvas);
     } else {
@@ -613,8 +600,7 @@ class _SquigglyTextPainter extends CustomPainter {
     if (fragmentShader == null) {
       canvas.drawImageRect(
         atlas,
-        Offset.zero &
-            Size(atlas.width.toDouble(), atlas.height.toDouble()),
+        Offset.zero & Size(atlas.width.toDouble(), atlas.height.toDouble()),
         Offset.zero & _atlasLogicalSize,
         paint,
       );
@@ -625,13 +611,11 @@ class _SquigglyTextPainter extends CustomPainter {
     final frameDuration = 0.068 / math.max(speed, double.minPositive);
     final seedIndex =
         (elapsedSeconds.value / frameDuration).floor().remainder(5);
-    final logicalScale =
-        (seedIndex.isOdd ? 8.0 : 6.0) * (fontSize / 100.0);
+    final logicalScale = (seedIndex.isOdd ? 8.0 : 6.0) * (fontSize / 100.0);
     final mapScale = logicalScale.clamp(1.5, _maximumDisplacement);
     final pointer = pointerPosition.value;
-    final pointerOffset = pointer == null
-      ? null
-      : pointer - Offset(_atlasPadding, _atlasPadding);
+    final pointerOffset =
+        pointer == null ? null : pointer - Offset(_atlasPadding, _atlasPadding);
     fragmentShader
       ..setFloat(0, _atlasLogicalSize.width)
       ..setFloat(1, _atlasLogicalSize.height)
@@ -645,10 +629,10 @@ class _SquigglyTextPainter extends CustomPainter {
       ..setFloat(
         9,
         hoverBehavior == SquigglyHoverBehavior.liftLetters
-          ? 1 + fluidity
-          : hoverBehavior == SquigglyHoverBehavior.magnetic
-            ? -(0.8 + fluidity)
-            : 0,
+            ? 1 + fluidity
+            : hoverBehavior == SquigglyHoverBehavior.magnetic
+                ? -(0.8 + fluidity)
+                : 0,
       )
       ..setImageSampler(0, atlas);
     paint.shader = fragmentShader;
@@ -656,180 +640,6 @@ class _SquigglyTextPainter extends CustomPainter {
       Offset.zero & _atlasLogicalSize,
       paint,
     );
-  }
-
-  Offset _pointerOffsetForGrapheme(
-    _GraphemeLayout grapheme,
-    Offset center,
-    double influence,
-  ) {
-    final pointer = pointerPosition.value;
-    if (pointer == null || hoverBehavior == SquigglyHoverBehavior.none) {
-      return Offset.zero;
-    }
-
-    if (hoverBehavior == SquigglyHoverBehavior.highlight) {
-      return Offset.zero;
-    }
-
-    if (hoverBehavior == SquigglyHoverBehavior.liftLetters) {
-      return Offset(0, -influence * grapheme.amplitude * (1 + fluidity));
-    }
-
-    if (hoverBehavior == SquigglyHoverBehavior.magnetic) {
-      final delta = pointer - center;
-      final distance = delta.distance;
-      if (distance <= 0) {
-        return Offset.zero;
-      }
-      final pull = delta / distance;
-      return pull * influence * grapheme.amplitude * (0.8 + fluidity);
-    }
-
-    return Offset.zero;
-  }
-
-  double _influence(Offset center) {
-    final pointer = pointerPosition.value;
-    if (pointer == null) {
-      return 0;
-    }
-    final normalized =
-        ((pointer - center).distance / hoverRadius).clamp(0.0, 1.0).toDouble();
-    return 1 - normalized * normalized * (3 - 2 * normalized);
-  }
-
-  List<_GraphemeLayout>? _buildGraphemeLayout() {
-    // Independent painting can change bidi ordering, ligatures, and joining.
-    // Keep the authoritative shaped run for those cases.
-    if (textPainter.textDirection == TextDirection.rtl ||
-        textPainter.textAlign == TextAlign.justify ||
-        textPainter.ellipsis != null ||
-        textPainter.maxLines != null) {
-      return null;
-    }
-
-    if (_containsAmbiguousShaping(text)) {
-      return null;
-    }
-
-    final lines = textPainter.computeLineMetrics();
-    final result = <_GraphemeLayout>[];
-    var start = 0;
-    var index = 0;
-    for (final grapheme in text.characters) {
-      final end = start + grapheme.length;
-      if (grapheme.trim().isEmpty) {
-        start = end;
-        continue;
-      }
-
-      final boxes = textPainter.getBoxesForSelection(
-        TextSelection(baseOffset: start, extentOffset: end),
-      );
-      final validBoxes = boxes
-          .where((box) => box.right > box.left && (box.right - box.left) > 0)
-          .toList(growable: false);
-      if (validBoxes.isEmpty) {
-        start = end;
-        continue;
-      }
-
-      final box = _mergeBoxes(validBoxes);
-      final line = _lineForBox(lines, box);
-      if (line == null) {
-        start = end;
-        continue;
-      }
-      final painter = TextPainter(
-        text: TextSpan(text: grapheme, style: style),
-        textDirection: textPainter.textDirection ?? TextDirection.ltr,
-        locale: textPainter.locale,
-        strutStyle: textPainter.strutStyle,
-      )..layout();
-      final letterMetrics = painter.computeLineMetrics();
-      if (letterMetrics.length != 1) {
-        start = end;
-        continue;
-      }
-      result.add(
-        _GraphemeLayout(
-          index: index,
-          text: grapheme,
-          painter: painter,
-          offset: Offset(
-            box.left,
-            line.baseline - letterMetrics.single.baseline,
-          ),
-          amplitude: _maximumDisplacement,
-        ),
-      );
-      start = end;
-      index++;
-    }
-    return result.isEmpty ? null : result;
-  }
-
-  TextBox _mergeBoxes(List<TextBox> boxes) {
-    final left = boxes.map((box) => box.left).reduce(math.min);
-    final top = boxes.map((box) => box.top).reduce(math.min);
-    final right = boxes.map((box) => box.right).reduce(math.max);
-    final bottom = boxes.map((box) => box.bottom).reduce(math.max);
-    return TextBox.fromLTRBD(
-      left,
-      top,
-      right,
-      bottom,
-      textPainter.textDirection ?? TextDirection.ltr,
-    );
-  }
-
-  LineMetrics? _lineForBox(List<LineMetrics> lines, TextBox box) {
-    if (lines.isEmpty) {
-      return null;
-    }
-    if (lines.length == 1) {
-      return lines.single;
-    }
-    final boxMid = (box.top + box.bottom) / 2;
-    LineMetrics? best;
-    var bestDistance = double.infinity;
-    for (final line in lines) {
-      final lineTop = line.baseline - line.ascent;
-      final lineBottom = line.baseline + line.descent;
-      if (boxMid >= lineTop - 1 && boxMid <= lineBottom + 1) {
-        return line;
-      }
-      final distance = ((lineTop + lineBottom) / 2 - boxMid).abs();
-      if (distance < bestDistance) {
-        bestDistance = distance;
-        best = line;
-      }
-    }
-    return best;
-  }
-
-  bool _containsAmbiguousShaping(String text) {
-    for (final codeUnit in text.codeUnits) {
-      if ((codeUnit >= 0x0590 && codeUnit <= 0x08ff) ||
-          (codeUnit >= 0x0900 && codeUnit <= 0x1fff) ||
-          (codeUnit >= 0xa800 && codeUnit <= 0xabff) ||
-          (codeUnit >= 0xfb00 && codeUnit <= 0xfdff) ||
-          (codeUnit >= 0xfe70 && codeUnit <= 0xfeff)) {
-        return true;
-      }
-    }
-    return text.contains('\u200d') || _hasFlagPair(text);
-  }
-
-  bool _hasFlagPair(String text) {
-    var regionalIndicators = 0;
-    for (final codePoint in text.runes) {
-      if (codePoint >= 0x1f1e6 && codePoint <= 0x1f1ff) {
-        regionalIndicators++;
-      }
-    }
-    return regionalIndicators >= 2;
   }
 
   double _lineStart(LineMetrics line, double width) {
@@ -872,22 +682,6 @@ class _SquigglyTextPainter extends CustomPainter {
       devicePixelRatio != oldPainter.devicePixelRatio ||
       elapsedSeconds != oldPainter.elapsedSeconds ||
       animationActive != oldPainter.animationActive;
-}
-
-class _GraphemeLayout {
-  const _GraphemeLayout({
-    required this.index,
-    required this.text,
-    required this.painter,
-    required this.offset,
-    required this.amplitude,
-  });
-
-  final int index;
-  final String text;
-  final TextPainter painter;
-  final Offset offset;
-  final double amplitude;
 }
 
 class _AtlasLayoutKey {
