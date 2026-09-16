@@ -6,6 +6,8 @@
 
 ## Unreleased
 
+- Restored the example animation GIF and related captured media after they were
+  accidentally emptied in a previous commit.
 - Documented that agents must keep `CHANGELOG.md` updated for behavior,
   compatibility, workflow, and documentation-policy changes.
 - Implemented hover and keyboard focus interaction for configured widgets,
