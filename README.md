@@ -58,7 +58,10 @@ without waiting for pointer input. The effect is centered on the text until
 the pointer enters the widget.
 
 Use `hoverScope` with `SquigglyHoverScope.all`, `.word`, or `.letter` to
-control how much text responds when `hoverOnly` or a pointer behavior is active.
+control the region affected by pointer interaction. `trembleLetter` and
+`trembleWord` always use their named region, regardless of `hoverScope`.
+Keyboard focus supplies a centered interaction target. Explicit `hoverPreview`
+also activates `hoverOnly`, so a preview does not wait for a real pointer.
 
 Animation is static by default. To enable the initial animated underline wave:
 
@@ -74,7 +77,12 @@ Use `SquigglyAnimationStyle.letters` to tremble the painted text in place, or
 `SquigglyAnimationStyle.waveAndLetters` to combine that displacement with the
 underline. Letter displacement scales with font size using a shared turbulence
 field; `amplitude` remains an underline-only setting. Animation parameters are
-validated, and
+validated.
+
+`speed: 0` pauses time-based motion while configured static pointer effects
+remain available. `fluidity` adjusts lift and magnetic strength; `stagger` is
+reserved and currently has no visual effect.
+
 `respectReducedMotion` defaults to `true` so platform reduced-motion
 preferences disable the internal ticker and pointer response.
 
@@ -90,8 +98,8 @@ const SquigglyText(
 ```
 
 Available behaviors include `shrink`, `enlarge`, `trembleLetter`, `trembleWord`,
-`repel`, `liftLetters`, and `magnetic`. Each uses a bounded falloff around the
-pointer. When animation is enabled, `hoverOnly` waits for pointer input or
+`repel`, `liftLetters`, and `magnetic`. The selected scope controls the
+affected region. When animation is enabled, `hoverOnly` waits for pointer input or
 keyboard focus. Configured interaction participates
 in keyboard focus traversal; the default static widget does not request focus.
 

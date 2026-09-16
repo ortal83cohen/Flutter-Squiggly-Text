@@ -15,6 +15,7 @@ uniform float uScopeLeft;
 uniform float uScopeTop;
 uniform float uScopeRight;
 uniform float uScopeBottom;
+uniform float uInteractionScale;
 uniform sampler2D uText;
 out vec4 fragColor;
 
@@ -57,7 +58,7 @@ void main() {
     return;
   }
 
-  if (uScale == 0.0 && uHoverMode == 0.0) {
+  if (uScale == 0.0 && uHoverMode == 0.0 && uPointerLift == 0.0) {
     fragColor = texture(uText, uv);
     return;
   }
@@ -131,16 +132,17 @@ void main() {
 
   if (uPointerLift != 0.0 && uPointerRadius > 0.0) {
     if (uPointerLift > 0.0) {
-      offset.y -= uPointerLift * influence * uScale;
+      // Sampling below the output pixel moves the rendered glyph upward.
+      offset.y += uPointerLift * influence * uInteractionScale;
     } else {
-      vec2 towardPointer = normalize(uPointer - fragment);
-      offset += towardPointer * (-uPointerLift) * influence * uScale;
+      vec2 towardPointer = (uPointer - fragment) / max(distance(uPointer, fragment), 0.001);
+      offset -= towardPointer * (-uPointerLift) * influence * uInteractionScale;
     }
   }
   if (uHoverMode == 6.0 && uPointerRadius > 0.0) {
     vec2 awayFromPointer = fragment - uPointer;
     float lengthAway = max(length(awayFromPointer), 0.001);
-    offset += awayFromPointer / lengthAway * influence * 7.0;
+    offset -= awayFromPointer / lengthAway * influence * 7.0;
   }
 
   vec2 sampleUv = clamp(uv + offset / uSize, vec2(0.001), vec2(0.999));

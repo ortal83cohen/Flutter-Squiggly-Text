@@ -17,3 +17,9 @@ All wiki content must be written in English and use Markdown. Keep this file up 
 - [SquigglyText Animation Technical Research](research/squiggly-text-animation-technical-research.md)
 - [SquigglyText Animation Implementation Plan](plans/squiggly-text-animation-implementation-plan.md)
 - [SquigglyText Implementation Summary](summaries/squiggly-text-implementation-summary.md)
+
+- [Configuration Interactions Review](research/configuration-interactions-review.md)
+- [Example Configuration Testing and Fixes](summaries/example-configuration-testing.md)
+
+- [Animated Layout Samples](summaries/animated-layout-samples.md)
+- [Linux CI Dependencies](summaries/linux-ci-dependencies.md)

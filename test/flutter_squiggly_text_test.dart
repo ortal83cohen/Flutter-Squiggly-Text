@@ -189,6 +189,48 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('reserves atlas room for hover scaling at text edges',
+      (tester) async {
+    const text = 'Hello Flutter testing words';
+    final staticKey = GlobalKey();
+    final highlightKey = GlobalKey();
+    final enlargeKey = GlobalKey();
+
+    Widget host(GlobalKey key, SquigglyHoverBehavior behavior) {
+      return SquigglyText(
+        text,
+        key: key,
+        style: const TextStyle(fontSize: 40),
+        hoverBehavior: behavior,
+      );
+    }
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SingleChildScrollView(
+          child: Column(
+            children: [
+              SquigglyText(
+                text,
+                key: staticKey,
+                style: const TextStyle(fontSize: 40),
+              ),
+              host(highlightKey, SquigglyHoverBehavior.highlight),
+              host(enlargeKey, SquigglyHoverBehavior.enlarge),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    final staticSize = tester.getSize(find.byKey(staticKey));
+    final highlightSize = tester.getSize(find.byKey(highlightKey));
+    final enlargeSize = tester.getSize(find.byKey(enlargeKey));
+    expect(highlightSize.height, greaterThan(staticSize.height));
+    expect(enlargeSize.height, greaterThan(highlightSize.height));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('lays out without wrapping when softWrap is false',
       (tester) async {
     await tester.pumpWidget(

@@ -42,7 +42,7 @@ class _ExamplePageState extends State<ExamplePage> {
   double _speed = 1;
   SquigglyHoverBehavior _hoverBehavior = SquigglyHoverBehavior.none;
   SquigglyHoverScope _hoverScope = SquigglyHoverScope.all;
-  bool _hoverOnly = false;
+  bool _previewOnIdle = true;
   bool _respectReducedMotion = false;
 
   @override
@@ -112,9 +112,9 @@ class _ExamplePageState extends State<ExamplePage> {
                         animationStyle: SquigglyAnimationStyle.letters,
                         speed: _speed,
                         hoverBehavior: _hoverBehavior,
-                        hoverPreview: !_hoverOnly,
-                        hoverScope: _hoverScope,
-                        hoverOnly: _hoverOnly,
+                        hoverPreview: _previewOnIdle,
+                        hoverScope: _effectiveScope,
+                        hoverOnly: !_previewOnIdle,
                         respectReducedMotion: _respectReducedMotion,
                       ),
                     ),
@@ -147,17 +147,21 @@ class _ExamplePageState extends State<ExamplePage> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    _hoverOnly
-                        ? 'Move the pointer over the text to activate it.'
-                        : 'Pointer effects preview at the center of the text. '
-                            'Move the pointer over it to interact.',
+                    _speed == 0
+                        ? 'Animation paused; pointer effects remain available.'
+                        : _previewOnIdle
+                            ? 'Pointer effects preview at the center of the text. '
+                                'Move the pointer over it to interact.'
+                            : 'Move the pointer over the text or focus it with '
+                                'the keyboard to activate it.',
                     style: theme.textTheme.bodySmall,
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<SquigglyHoverScope>(
-                    initialValue: _hoverScope,
+                    key: ValueKey(_effectiveScope),
+                    initialValue: _effectiveScope,
                     decoration: const InputDecoration(
-                      labelText: 'Animation range',
+                      labelText: 'Pointer range',
                       border: OutlineInputBorder(),
                     ),
                     items: [
@@ -167,12 +171,23 @@ class _ExamplePageState extends State<ExamplePage> {
                           child: Text(_hoverScopeLabel(scope)),
                         ),
                     ],
-                    onChanged: (scope) {
-                      if (scope != null) {
-                        setState(() => _hoverScope = scope);
-                      }
-                    },
+                    onChanged: _rangeIsFixed
+                        ? null
+                        : (scope) {
+                            if (scope != null) {
+                              setState(() => _hoverScope = scope);
+                            }
+                          },
                   ),
+                  if (_rangeIsFixed)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        _hoverBehavior == SquigglyHoverBehavior.trembleLetter
+                            ? 'This effect always targets one letter.'
+                            : 'This effect always targets one word.',
+                      ),
+                    ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<SquigglyHoverBehavior>(
                     initialValue: _hoverBehavior,
@@ -193,11 +208,28 @@ class _ExamplePageState extends State<ExamplePage> {
                       }
                     },
                   ),
-                  SwitchListTile.adaptive(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Animate only on hover or focus'),
-                    value: _hoverOnly,
-                    onChanged: (value) => setState(() => _hoverOnly = value),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<bool>(
+                    initialValue: _previewOnIdle,
+                    decoration: const InputDecoration(
+                      labelText: 'Activation',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: true,
+                        child: Text('Automatic preview'),
+                      ),
+                      DropdownMenuItem(
+                        value: false,
+                        child: Text('Hover or keyboard focus'),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() => _previewOnIdle = value);
+                      }
+                    },
                   ),
                   SwitchListTile.adaptive(
                     contentPadding: EdgeInsets.zero,
@@ -211,52 +243,83 @@ class _ExamplePageState extends State<ExamplePage> {
             ),
           ),
           const SizedBox(height: 28),
-          Text(
-            'Layout and accessibility',
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+          Text('Layout and accessibility',
+              style: theme.textTheme.titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
-          const _ExampleSection(
+          const Text(
+            'These samples share the animation and pointer controls above. '
+            'Font size is scaled to half the main preview; sample text stays fixed.',
+          ),
+          const SizedBox(height: 16),
+          _ExampleSection(
             title: 'Multiline text',
-            child: SquigglyText(
-              'A longer sentence wraps naturally while every line keeps its animation.',
-              style: TextStyle(fontSize: 22, height: 1.35),
-              amplitude: 0,
+            child: SizedBox(
+              width: 420,
+              child: _layoutSample(
+                'A longer sentence wraps naturally while every line keeps its animation.',
+              ),
             ),
           ),
-          const _ExampleSection(
-            title: 'Right-to-left text',
-            child: SquigglyText(
-              'Right-to-left layout sample',
-              textDirection: TextDirection.rtl,
-              textAlign: TextAlign.right,
-              style: TextStyle(fontSize: 24),
-              amplitude: 0,
+          _ExampleSection(
+            title: 'Right-to-left layout (English text, aligned right)',
+            child: SizedBox(
+              width: double.infinity,
+              child: _layoutSample(
+                'Right-aligned animated sample',
+                textDirection: TextDirection.rtl,
+                textAlign: TextAlign.right,
+              ),
             ),
           ),
           _ExampleSection(
             title: 'Custom semantics label',
-            child: Semantics(
-              label: 'Accessible animated greeting',
-              child: const SquigglyText(
-                'Hello Flutter',
-                semanticsLabel: 'Accessible animated greeting',
-                style: TextStyle(fontSize: 24),
-                amplitude: 0,
-              ),
+            child: _layoutSample(
+              'Hello Flutter',
+              semanticsLabel: 'Accessible animated greeting',
             ),
+          ),
+          const Text(
+            'Screen readers announce “Accessible animated greeting” '
+            'as one stable label while the text animates.',
           ),
         ],
       ),
     );
   }
 
+  Widget _layoutSample(
+    String text, {
+    TextDirection? textDirection,
+    TextAlign textAlign = TextAlign.start,
+    String? semanticsLabel,
+  }) =>
+      SquigglyText(
+        text,
+        style: TextStyle(
+          fontFamily: 'AmaticSC',
+          fontWeight: FontWeight.w700,
+          fontSize: _fontSize / 2,
+          height: 1.35,
+          color: Theme.of(context).colorScheme.onSurface,
+        ),
+        amplitude: 0,
+        animationStyle: SquigglyAnimationStyle.letters,
+        speed: _speed,
+        hoverBehavior: _hoverBehavior,
+        hoverPreview: _previewOnIdle,
+        hoverScope: _effectiveScope,
+        hoverOnly: !_previewOnIdle,
+        respectReducedMotion: _respectReducedMotion,
+        textDirection: textDirection,
+        textAlign: textAlign,
+        semanticsLabel: semanticsLabel,
+      );
+
   String _hoverBehaviorLabel(SquigglyHoverBehavior behavior) {
     switch (behavior) {
       case SquigglyHoverBehavior.none:
-        return 'none (static)';
+        return 'none';
       case SquigglyHoverBehavior.highlight:
         return 'highlight';
       case SquigglyHoverBehavior.shrink:
@@ -275,6 +338,16 @@ class _ExamplePageState extends State<ExamplePage> {
         return 'pull like a magnet';
     }
   }
+
+  SquigglyHoverScope get _effectiveScope => switch (_hoverBehavior) {
+        SquigglyHoverBehavior.trembleLetter => SquigglyHoverScope.letter,
+        SquigglyHoverBehavior.trembleWord => SquigglyHoverScope.word,
+        _ => _hoverScope,
+      };
+
+  bool get _rangeIsFixed =>
+      _hoverBehavior == SquigglyHoverBehavior.trembleLetter ||
+      _hoverBehavior == SquigglyHoverBehavior.trembleWord;
 
   String _hoverScopeLabel(SquigglyHoverScope scope) {
     switch (scope) {
@@ -321,7 +394,7 @@ class _SliderSetting extends StatelessWidget {
           ),
         ),
         SizedBox(
-          width: 32,
+          width: 48,
           child: Text(value.toStringAsFixed(1)),
         ),
       ],
@@ -336,17 +409,15 @@ class _ExampleSection extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          child,
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            child,
+          ],
+        ),
+      );
 }

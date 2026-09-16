@@ -171,10 +171,10 @@ class SquigglyText extends StatefulWidget {
   /// The number of wave cycles per second.
   final double speed;
 
-  /// The normalized smoothing amount reserved for interactive animation.
+  /// The normalized strength adjustment for lift and magnetic interaction.
   final double fluidity;
 
-  /// The phase offset between neighboring graphemes.
+  /// Reserved for per-grapheme staggering; currently has no visual effect.
   final double stagger;
 
   /// The pointer interaction style.
@@ -184,12 +184,20 @@ class SquigglyText extends StatefulWidget {
   final double hoverRadius;
 
   /// Whether to show the pointer effect around the text center by default.
+  ///
+  /// This is an explicit preview target. When enabled, it activates a
+  /// hover-only animation even when the pointer has not entered the widget.
   final bool hoverPreview;
 
   /// The text region affected while pointer animation is active.
+  ///
+  /// [SquigglyHoverBehavior.trembleLetter] always uses a letter-sized region
+  /// and [SquigglyHoverBehavior.trembleWord] always uses a word-sized region.
+  /// Other pointer behaviors use this value directly.
   final SquigglyHoverScope hoverScope;
 
-  /// Whether automatic animation waits for pointer input.
+  /// Whether automatic animation waits for pointer input or keyboard focus.
+  /// An explicit [hoverPreview] target also activates the animation.
   final bool hoverOnly;
 
   /// Whether animation should pause when the widget is not visible.
@@ -225,6 +233,23 @@ class _SquigglyTextState extends State<SquigglyText>
   bool get _hoverNeedsAnimation =>
       widget.hoverBehavior == SquigglyHoverBehavior.trembleLetter ||
       widget.hoverBehavior == SquigglyHoverBehavior.trembleWord;
+
+  SquigglyHoverScope get _effectiveHoverScope {
+    switch (widget.hoverBehavior) {
+      case SquigglyHoverBehavior.trembleLetter:
+        return SquigglyHoverScope.letter;
+      case SquigglyHoverBehavior.trembleWord:
+        return SquigglyHoverScope.word;
+      case SquigglyHoverBehavior.none:
+      case SquigglyHoverBehavior.highlight:
+      case SquigglyHoverBehavior.shrink:
+      case SquigglyHoverBehavior.enlarge:
+      case SquigglyHoverBehavior.repel:
+      case SquigglyHoverBehavior.liftLetters:
+      case SquigglyHoverBehavior.magnetic:
+        return widget.hoverScope;
+    }
+  }
 
   @override
   void initState() {
@@ -292,7 +317,11 @@ class _SquigglyTextState extends State<SquigglyText>
   }
 
   void _setFocus(bool focused) {
+    if (_isFocused == focused) {
+      return;
+    }
     _isFocused = focused;
+    setState(() {});
     _updateAnimation();
   }
 
@@ -373,8 +402,8 @@ class _SquigglyTextState extends State<SquigglyText>
       hoverBehavior:
           reducedMotion ? SquigglyHoverBehavior.none : widget.hoverBehavior,
       hoverRadius: widget.hoverRadius,
-      hoverPreview: widget.hoverPreview,
-      hoverScope: widget.hoverScope,
+      hoverPreview: widget.hoverPreview || _isFocused,
+      hoverScope: _effectiveHoverScope,
     );
     _painter = painter;
     previousPainter?._releaseOwnedResources();
@@ -506,7 +535,7 @@ class _SquigglyTextPainter extends CustomPainter {
       overflow: textPainter.ellipsis,
       strutStyle: textPainter.strutStyle,
       devicePixelRatio: devicePixelRatio,
-      padding: _atlasPadding,
+      padding: _atlasOrigin,
       width: textPainter.width,
       height: textPainter.height,
     );
@@ -517,13 +546,13 @@ class _SquigglyTextPainter extends CustomPainter {
     _textAtlas?.dispose();
     _textAtlas = null;
     _atlasLayoutKey = key;
-    final logicalWidth = textPainter.width + _atlasPadding * 2;
-    final logicalHeight = textPainter.height + _atlasPadding * 2;
+    final logicalWidth = textPainter.width + horizontalPadding * 2;
+    final logicalHeight = textPainter.height + _verticalPadding * 2;
     _atlasLogicalSize = Size(logicalWidth, logicalHeight);
     final recorder = ui.PictureRecorder();
     final atlasCanvas = Canvas(recorder);
     atlasCanvas.scale(devicePixelRatio);
-    textPainter.paint(atlasCanvas, Offset(_atlasPadding, _atlasPadding));
+    textPainter.paint(atlasCanvas, _atlasOrigin);
     final picture = recorder.endRecording();
     try {
       _textAtlas = picture.toImageSync(
@@ -552,20 +581,39 @@ class _SquigglyTextPainter extends CustomPainter {
       (animationStyle == SquigglyAnimationStyle.wave ||
           animationStyle == SquigglyAnimationStyle.waveAndLetters);
 
-  double get _atlasPadding =>
-      animationStyle == SquigglyAnimationStyle.letters ||
-              animationStyle == SquigglyAnimationStyle.waveAndLetters ||
-              hoverBehavior != SquigglyHoverBehavior.none
-          ? _maximumDisplacement.ceilToDouble() + 2
-          : 0;
+  double get _baseAtlasPadding {
+    if (!_usesAtlas) return 0;
+    final pointerRoom = hoverBehavior == SquigglyHoverBehavior.none
+        ? 0.0
+        : math.max(7.0, (1 + fluidity) * _maximumDisplacement);
+    return (_maximumDisplacement + pointerRoom).ceilToDouble() + 2;
+  }
+
+  double get _hoverScale => switch (hoverBehavior) {
+        SquigglyHoverBehavior.highlight => 0.12,
+        SquigglyHoverBehavior.enlarge => 0.5,
+        _ => 0.0,
+      };
+
+  // The shader scales around the text center. Reserve each axis separately
+  // so wrapped text can grow vertically without consuming its width budget.
+  double get horizontalPadding =>
+      _baseAtlasPadding + textPainter.width * _hoverScale / 2;
+  double get _verticalPadding =>
+      _baseAtlasPadding + textPainter.height * _hoverScale / 2;
+  Offset get _atlasOrigin => Offset(horizontalPadding, _verticalPadding);
 
   double get height =>
-      textPainter.height + gap + amplitude + strokeWidth + _atlasPadding * 2;
-
-  double get horizontalPadding => _atlasPadding;
+      textPainter.height + gap + amplitude + strokeWidth + _verticalPadding * 2;
 
   void layout({required double maxWidth}) {
-    textPainter.layout(maxWidth: maxWidth);
+    final textWidth = maxWidth.isFinite && _usesAtlas
+        ? math.max(0.0, (maxWidth - _baseAtlasPadding * 2) / (1 + _hoverScale))
+        : maxWidth;
+    textPainter.layout(
+      minWidth: textWidth.isFinite ? textWidth : 0,
+      maxWidth: textWidth,
+    );
     _rebuildAtlasIfNeeded(maxWidth);
   }
 
@@ -576,14 +624,14 @@ class _SquigglyTextPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.save();
-    canvas.translate(_atlasPadding, _atlasPadding);
     if (_usesAtlas) {
       _paintAtlas(canvas);
     } else {
-      textPainter.paint(canvas, Offset.zero);
+      textPainter.paint(canvas, _atlasOrigin);
     }
 
+    canvas.save();
+    canvas.translate(horizontalPadding, _verticalPadding);
     final metrics = textPainter.computeLineMetrics();
     final paint = Paint()
       ..color = color
@@ -645,7 +693,7 @@ class _SquigglyTextPainter extends CustomPainter {
   void _paintAtlas(Canvas canvas) {
     final atlas = _textAtlas;
     if (atlas == null) {
-      textPainter.paint(canvas, Offset.zero);
+      textPainter.paint(canvas, _atlasOrigin);
       return;
     }
     final paint = Paint();
@@ -673,26 +721,18 @@ class _SquigglyTextPainter extends CustomPainter {
         _atlasLogicalSize.height / 2,
       );
     }
-    final pointerOffset =
-        pointer == null ? null : pointer - Offset(_atlasPadding, _atlasPadding);
-    final scopeRect = pointer == null ? null : _scopeRect(pointerOffset!);
-    final scopedRect = scopeRect?.shift(Offset(_atlasPadding, _atlasPadding));
+    final textPointer = pointer == null ? null : pointer - _atlasOrigin;
+    final scopeRect = pointer == null ? null : _scopeRect(textPointer!);
+    final scopedRect = scopeRect?.shift(_atlasOrigin);
     fragmentShader
       ..setFloat(0, _atlasLogicalSize.width)
       ..setFloat(1, _atlasLogicalSize.height)
       ..setFloat(2, seedIndex.toDouble())
-      ..setFloat(
-        3,
-        _animatesLetters ||
-                hoverBehavior == SquigglyHoverBehavior.trembleLetter ||
-                hoverBehavior == SquigglyHoverBehavior.trembleWord
-            ? mapScale
-            : 0,
-      )
+      ..setFloat(3, _animatesLetters ? mapScale : 0)
       ..setFloat(4, 0.02)
       ..setFloat(5, 3)
-      ..setFloat(6, pointerOffset?.dx ?? -10000)
-      ..setFloat(7, pointerOffset?.dy ?? -10000)
+      ..setFloat(6, pointer?.dx ?? -10000)
+      ..setFloat(7, pointer?.dy ?? -10000)
       ..setFloat(8, hoverRadius)
       ..setFloat(
         9,
@@ -709,6 +749,7 @@ class _SquigglyTextPainter extends CustomPainter {
       ..setFloat(14, scopedRect?.top ?? -1)
       ..setFloat(15, scopedRect?.right ?? -1)
       ..setFloat(16, scopedRect?.bottom ?? -1)
+      ..setFloat(17, (6.0 * fontSize / 100).clamp(1.5, _maximumDisplacement))
       ..setImageSampler(0, atlas);
     paint.shader = fragmentShader;
     canvas.drawRect(
@@ -826,6 +867,8 @@ class _SquigglyTextPainter extends CustomPainter {
       pointerPosition != oldPainter.pointerPosition ||
       hoverBehavior != oldPainter.hoverBehavior ||
       hoverRadius != oldPainter.hoverRadius ||
+      hoverPreview != oldPainter.hoverPreview ||
+      hoverScope != oldPainter.hoverScope ||
       shader != oldPainter.shader ||
       devicePixelRatio != oldPainter.devicePixelRatio ||
       elapsedSeconds != oldPainter.elapsedSeconds ||
@@ -859,7 +902,7 @@ class _AtlasLayoutKey {
   final String? overflow;
   final StrutStyle? strutStyle;
   final double devicePixelRatio;
-  final double padding;
+  final Offset padding;
   final double width;
   final double height;
 
