@@ -1,0 +1,6 @@
+name: test_package  
+version: 1.2.3
+
+dependencies:
+  flutter:
+    sdk: flutter
