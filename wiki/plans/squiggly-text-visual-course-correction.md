@@ -1,5 +1,9 @@
 # SquigglyText Visual Course Correction
 
+## Superseded
+
+This document is kept as history. The rigid-body sine bounce it prescribed does not match the CodePen. Letter animation should follow [CodePen Glyph Displacement Plan](codepen-glyph-displacement-plan.md) instead: monotonic time plus turbulence displacement of a glyph snapshot.
+
 ## Decision
 
 A full rewrite is not required. The widget lifecycle, layout snapshot, grapheme fallback, underline, hover, and reduced-motion paths can stay. The original visual target was wrong: the CodePen reference animates the glyphs, while the first plan treated a tiny vertical bounce plus an underline as the product.
