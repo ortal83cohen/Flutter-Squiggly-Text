@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter_squiggly_text_example/l10n/app_localizations.dart';import 'package:flutter/material.dart';
 import 'package:flutter_squiggly_text/flutter_squiggly_text.dart';
 
 void main() {
@@ -13,12 +13,14 @@ class SquigglyTextExampleApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Squiggly Text Example',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
-        useMaterial3: true,
-      ),
-      home: const ExamplePage(),
+        title: 'Squiggly Text Example',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+          useMaterial3: true,
+        ),
+        home: const ExamplePage(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales
     );
   }
 }
