@@ -1,0 +1,62 @@
+name: Platform compatibility
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: android
+            target: apk
+            options: --debug
+          - os: ubuntu-latest
+            platform: web
+            target: web
+            options: --release
+          - os: ubuntu-latest
+            platform: linux
+            target: linux
+            options: --debug
+          - os: windows-latest
+            platform: windows
+            target: windows
+            options: --debug
+          - os: macos-latest
+            platform: macos
+            target: macos
+            options: --debug
+          - os: macos-latest
+            platform: ios
+            target: ios
+            options: --no-codesign
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - working-directory: example
+        run: flutter create --platforms=${{ matrix.platform }} .
+      - working-directory: example
+        run: flutter pub get
+      - working-directory: example
+        run: flutter build ${{ matrix.target }} ${{ matrix.options }}
