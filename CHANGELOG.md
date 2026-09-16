@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.4 - 2026-09-16
+
+- Automated patch release from main.
+
 ## Unreleased
 
 - Documented that agents must keep `CHANGELOG.md` updated for behavior,
