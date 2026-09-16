@@ -1,0 +1,320 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_squiggly_text/flutter_squiggly_text.dart';
+
+void main() {
+  runApp(const SquigglyTextExampleApp());
+}
+
+/// Demonstrates the flutter_squiggly_text package.
+class SquigglyTextExampleApp extends StatelessWidget {
+  /// Creates the example application.
+  const SquigglyTextExampleApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Squiggly Text Example',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+        useMaterial3: true,
+      ),
+      home: const ExamplePage(),
+    );
+  }
+}
+
+/// Displays the interactive package example.
+class ExamplePage extends StatefulWidget {
+  /// Creates the example page.
+  const ExamplePage({super.key});
+
+  @override
+  State<ExamplePage> createState() => _ExamplePageState();
+}
+
+class _ExamplePageState extends State<ExamplePage> {
+  static const _colors = <Color>[
+    Colors.teal,
+    Colors.deepOrange,
+    Colors.indigo,
+    Colors.pink,
+  ];
+
+  final _textController = TextEditingController(
+    text: 'Make every word ripple',
+  );
+  double _amplitude = 3;
+  double _wavelength = 10;
+  double _gap = 2;
+  Color _squiggleColor = Colors.teal;
+  SquigglyAnimationStyle _animationStyle =
+      SquigglyAnimationStyle.waveAndLetters;
+  SquigglyHoverBehavior _hoverBehavior = SquigglyHoverBehavior.none;
+  bool _hoverOnly = false;
+  bool _respectReducedMotion = false;
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final previewStyle = theme.textTheme.headlineMedium?.copyWith(
+      fontWeight: FontWeight.w700,
+      color: theme.colorScheme.onSurface,
+    );
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Squiggly Text'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+        children: [
+          Text(
+            'Interactive preview',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Tune the underline, then compare the layout examples below.',
+            style: theme.textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 20),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SquigglyText(
+                    _textController.text,
+                    style: previewStyle,
+                    squiggleColor: _squiggleColor,
+                    amplitude: _amplitude,
+                    wavelength: _wavelength,
+                    gap: _gap,
+                    textAlign: TextAlign.center,
+                    animationStyle: _animationStyle,
+                    hoverBehavior: _hoverBehavior,
+                    hoverOnly: _hoverOnly,
+                    respectReducedMotion: _respectReducedMotion,
+                  ),
+                  const SizedBox(height: 24),
+                  TextField(
+                    controller: _textController,
+                    decoration: const InputDecoration(
+                      labelText: 'Preview text',
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                  const SizedBox(height: 16),
+                  _SliderSetting(
+                    label: 'Amplitude',
+                    value: _amplitude,
+                    min: 0,
+                    max: 8,
+                    divisions: 16,
+                    onChanged: (value) => setState(() => _amplitude = value),
+                  ),
+                  _SliderSetting(
+                    label: 'Wavelength',
+                    value: _wavelength,
+                    min: 4,
+                    max: 24,
+                    divisions: 20,
+                    onChanged: (value) => setState(() => _wavelength = value),
+                  ),
+                  _SliderSetting(
+                    label: 'Gap',
+                    value: _gap,
+                    min: 0,
+                    max: 8,
+                    divisions: 16,
+                    onChanged: (value) => setState(() => _gap = value),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<SquigglyAnimationStyle>(
+                    initialValue: _animationStyle,
+                    decoration: const InputDecoration(
+                      labelText: 'Animation style',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: [
+                      for (final style in SquigglyAnimationStyle.values)
+                        DropdownMenuItem(
+                          value: style,
+                          child: Text(style.name),
+                        ),
+                    ],
+                    onChanged: (style) {
+                      if (style != null) {
+                        setState(() => _animationStyle = style);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<SquigglyHoverBehavior>(
+                    initialValue: _hoverBehavior,
+                    decoration: const InputDecoration(
+                      labelText: 'Pointer interaction',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: [
+                      for (final behavior in SquigglyHoverBehavior.values)
+                        DropdownMenuItem(
+                          value: behavior,
+                          child: Text(behavior.name),
+                        ),
+                    ],
+                    onChanged: (behavior) {
+                      if (behavior != null) {
+                        setState(() => _hoverBehavior = behavior);
+                      }
+                    },
+                  ),
+                  SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Animate only on hover or focus'),
+                    value: _hoverOnly,
+                    onChanged: (value) => setState(() => _hoverOnly = value),
+                  ),
+                  SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Respect reduced-motion settings'),
+                    value: _respectReducedMotion,
+                    onChanged: (value) =>
+                        setState(() => _respectReducedMotion = value),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 12,
+                    children: [
+                      for (final color in _colors)
+                        ChoiceChip(
+                          label: const SizedBox.shrink(),
+                          avatar: CircleAvatar(backgroundColor: color),
+                          selected: color == _squiggleColor,
+                          onSelected: (_) =>
+                              setState(() => _squiggleColor = color),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 28),
+          Text(
+            'Layout and accessibility',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 12),
+          const _ExampleSection(
+            title: 'Multiline text',
+            child: SquigglyText(
+              'A longer sentence wraps naturally while every line keeps its underline.',
+              style: TextStyle(fontSize: 22, height: 1.35),
+              squiggleColor: Colors.deepOrange,
+              amplitude: 2.5,
+              wavelength: 9,
+            ),
+          ),
+          const _ExampleSection(
+            title: 'Right-to-left text',
+            child: SquigglyText(
+              'Right-to-left layout sample',
+              textDirection: TextDirection.rtl,
+              textAlign: TextAlign.right,
+              style: TextStyle(fontSize: 24),
+              squiggleColor: Colors.indigo,
+            ),
+          ),
+          _ExampleSection(
+            title: 'Custom semantics label',
+            child: Semantics(
+              label: 'Accessible underlined greeting',
+              child: const SquigglyText(
+                'Hello Flutter',
+                semanticsLabel: 'Accessible underlined greeting',
+                style: TextStyle(fontSize: 24),
+                squiggleColor: Colors.pink,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SliderSetting extends StatelessWidget {
+  const _SliderSetting({
+    required this.label,
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.divisions,
+    required this.onChanged,
+  });
+
+  final String label;
+  final double value;
+  final double min;
+  final double max;
+  final int divisions;
+  final ValueChanged<double> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        SizedBox(width: 92, child: Text(label)),
+        Expanded(
+          child: Slider(
+            value: value,
+            min: min,
+            max: max,
+            divisions: divisions,
+            label: value.toStringAsFixed(1),
+            onChanged: onChanged,
+          ),
+        ),
+        SizedBox(
+          width: 32,
+          child: Text(value.toStringAsFixed(1)),
+        ),
+      ],
+    );
+  }
+}
+
+class _ExampleSection extends StatelessWidget {
+  const _ExampleSection({required this.title, required this.child});
+
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          child,
+        ],
+      ),
+    );
+  }
+}
