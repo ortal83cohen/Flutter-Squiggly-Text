@@ -1,5 +1,9 @@
+# Changelog
+
 ## Unreleased
 
+- Documented that agents must keep `CHANGELOG.md` updated for behavior,
+  compatibility, workflow, and documentation-policy changes.
 - Implemented hover and keyboard focus interaction for configured widgets,
 	including bounded highlight, letter-lift, and magnetic pointer responses.
 - Added hover modes for shrinking, enlarging, trembling a hovered letter or

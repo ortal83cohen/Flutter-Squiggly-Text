@@ -212,7 +212,7 @@ class SquigglyText extends StatefulWidget {
 
 class _SquigglyTextState extends State<SquigglyText>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
-  late final Ticker _ticker = createTicker(_handleTick);
+  late final Ticker _ticker;
   late final ValueNotifier<double> _elapsedSeconds = ValueNotifier<double>(0);
   late final ValueNotifier<bool> _animationActive = ValueNotifier<bool>(false);
   Duration? _lastTickerElapsed;
@@ -254,6 +254,7 @@ class _SquigglyTextState extends State<SquigglyText>
   @override
   void initState() {
     super.initState();
+    _ticker = createTicker(_handleTick);
     WidgetsBinding.instance.addObserver(this);
     _loadShader();
   }
