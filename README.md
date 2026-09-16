@@ -1,7 +1,17 @@
 # flutter_squiggly_text
 
+[![pub package](https://img.shields.io/pub/v/flutter_squiggly_text.svg)](https://pub.dev/packages/flutter_squiggly_text)
+[![pub points](https://img.shields.io/pub/points/flutter_squiggly_text)](https://pub.dev/packages/flutter_squiggly_text/score)
+[![popularity](https://img.shields.io/pub/popularity/flutter_squiggly_text)](https://pub.dev/packages/flutter_squiggly_text/score)
+[![likes](https://img.shields.io/pub/likes/flutter_squiggly_text)](https://pub.dev/packages/flutter_squiggly_text/score)
+[![CI](https://github.com/ortal83cohen/Flutter-Squiggly-Text/actions/workflows/platforms.yml/badge.svg)](https://github.com/ortal83cohen/Flutter-Squiggly-Text/actions/workflows/platforms.yml)
+[![platform](https://img.shields.io/badge/platform-android%20%7C%20ios%20%7C%20web%20%7C%20windows%20%7C%20macos%20%7C%20linux-blue)](https://pub.dev/packages/flutter_squiggly_text)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Add a customizable squiggly underline to Flutter text, with optional animation
 and pointer interaction.
+
+![SquigglyText example](screenshots/example.gif)
 
 ## Features
 
@@ -98,9 +108,10 @@ reference.
 
 ## Example application
 
-The [`example/`](example/) directory contains an interactive preview with
-Amatic SC, glyph displacement, underline geometry, color, wrapping,
-right-to-left text, and accessibility semantics.
+The looping preview at the top of this README shows the example app without
+opening a video player. The [`example/`](example/) directory contains the
+interactive preview with Amatic SC, glyph displacement, underline geometry,
+color, wrapping, right-to-left text, and accessibility semantics.
 
 ```shell
 cd example

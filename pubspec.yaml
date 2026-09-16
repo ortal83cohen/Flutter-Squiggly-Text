@@ -9,6 +9,10 @@ topics:
   - text
   - typography
   - widget
+  - animation
+screenshots:
+  - description: Animated squiggly underline and letter displacement in the example app.
+    path: screenshots/example.gif
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
