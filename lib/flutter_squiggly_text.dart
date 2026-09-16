@@ -174,6 +174,7 @@ class _SquigglyTextState extends State<SquigglyText>
   late final ValueNotifier<bool> _animationActive = ValueNotifier<bool>(false);
   Duration? _lastTickerElapsed;
   ui.FragmentShader? _shader;
+  _SquigglyTextPainter? _painter;
 
   bool _isAnimating = false;
   bool _isFocused = false;
@@ -284,6 +285,8 @@ class _SquigglyTextState extends State<SquigglyText>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _painter?._releaseOwnedResources();
+    _painter = null;
     _pointerPosition.dispose();
     _ticker.dispose();
     _elapsedSeconds.dispose();
@@ -302,6 +305,7 @@ class _SquigglyTextState extends State<SquigglyText>
         Theme.of(context).textTheme.bodyMedium?.color ??
         Colors.black;
     final direction = widget.textDirection ?? Directionality.of(context);
+    final previousPainter = _painter;
     final painter = _SquigglyTextPainter(
       text: widget.text,
       style: effectiveStyle,
@@ -329,6 +333,8 @@ class _SquigglyTextState extends State<SquigglyText>
           reducedMotion ? SquigglyHoverBehavior.none : widget.hoverBehavior,
       hoverRadius: widget.hoverRadius,
     );
+    _painter = painter;
+    previousPainter?._releaseOwnedResources();
 
     Widget child = Semantics(
       label: widget.semanticsLabel ?? widget.text,
@@ -447,7 +453,7 @@ class _SquigglyTextPainter extends CustomPainter {
       text: text,
       style: style,
       locale: textPainter.locale,
-      direction: textPainter.textDirection,
+      direction: textPainter.textDirection ?? TextDirection.ltr,
       align: textPainter.textAlign,
       maxWidth: maxWidth,
       maxLines: textPainter.maxLines,
@@ -555,10 +561,9 @@ class _SquigglyTextPainter extends CustomPainter {
     canvas.restore();
   }
 
-  @override
-  void dispose() {
+  void _releaseOwnedResources() {
     _textAtlas?.dispose();
-    super.dispose();
+    _textAtlas = null;
   }
 
   Path _underlinePath(LineMetrics line, double width) {
@@ -738,7 +743,7 @@ class _SquigglyTextPainter extends CustomPainter {
       }
       final painter = TextPainter(
         text: TextSpan(text: grapheme, style: style),
-        textDirection: textPainter.textDirection,
+        textDirection: textPainter.textDirection ?? TextDirection.ltr,
         locale: textPainter.locale,
         strutStyle: textPainter.strutStyle,
       )..layout();
