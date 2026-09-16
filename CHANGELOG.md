@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1 - 2026-09-16
+
+- Automated patch release from main.
+
 ## Unreleased
 
 - Implemented hover and keyboard focus interaction for configured widgets,
