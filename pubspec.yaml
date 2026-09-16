@@ -1,6 +1,6 @@
 name: flutter_squiggly_text
 description: A Flutter widget for rendering text with a customizable squiggly underline.
-version: 0.1.0
+version: 0.1.2
 homepage: https://github.com/ortal83cohen/Flutter-Squiggly-Text
 repository: https://github.com/ortal83cohen/Flutter-Squiggly-Text
 issue_tracker: https://github.com/ortal83cohen/Flutter-Squiggly-Text/issues
@@ -9,6 +9,10 @@ topics:
   - text
   - typography
   - widget
+  - animation
+screenshots:
+  - description: Animated squiggly underline and letter displacement in the example app.
+    path: screenshots/example.gif
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -26,3 +30,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  shaders:
+    - shaders/squiggly_turbulence.frag

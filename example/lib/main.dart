@@ -1,6 +1,6 @@
+import 'package:flutter_squiggly_text_example/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_squiggly_text/flutter_squiggly_text.dart';
-import 'package:flutter_squiggly_text_example/l10n/app_localizations.dart';
 
 void main() {
   runApp(const SquigglyTextExampleApp());
@@ -14,15 +14,14 @@ class SquigglyTextExampleApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Squiggly Text Example',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
-        useMaterial3: true,
-      ),
-      home: const ExamplePage(),
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-    );
+        title: 'Squiggly Text Example',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+          useMaterial3: true,
+        ),
+        home: const ExamplePage(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales);
   }
 }
 
@@ -43,22 +42,16 @@ class _ExamplePageState extends State<ExamplePage> {
     Colors.pink,
   ];
 
-  final _textController = TextEditingController(text: 'Make every word ripple');
-  double _fontSize = 36;
-  double _letterSpacing = 0;
-  double _lineHeight = 1.2;
-  FontWeight _fontWeight = FontWeight.w700;
-  TextAlign _textAlign = TextAlign.center;
-  TextDirection _textDirection = TextDirection.ltr;
-  TextOverflow _overflow = TextOverflow.clip;
-  int _maxLines = 2;
-  Color _textColor = Colors.teal;
-  SquigglyAnimationStyle _animationStyle = SquigglyAnimationStyle.letters;
-  double _speed = 1;
-  double _fluidity = 0.5;
-  double _stagger = 0.2;
+  final _textController = TextEditingController(
+    text: 'Squiggly Text',
+  );
+  double _amplitude = 6;
+  double _wavelength = 14;
+  double _gap = 4;
+  Color _squiggleColor = Colors.deepOrange;
+  SquigglyAnimationStyle _animationStyle =
+      SquigglyAnimationStyle.waveAndLetters;
   SquigglyHoverBehavior _hoverBehavior = SquigglyHoverBehavior.none;
-  double _hoverRadius = 48;
   bool _hoverOnly = false;
   bool _respectReducedMotion = false;
 
@@ -71,28 +64,30 @@ class _ExamplePageState extends State<ExamplePage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final previewStyle = theme.textTheme.headlineMedium?.copyWith(
-      fontSize: _fontSize,
-      fontWeight: _fontWeight,
-      letterSpacing: _letterSpacing,
-      height: _lineHeight,
-      color: _textColor,
+    const previewStyle = TextStyle(
+      fontFamily: 'AmaticSC',
+      fontSize: 88,
+      fontWeight: FontWeight.w700,
+      height: 1,
+      color: Color(0xFF1A1A1A),
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Squiggly Text')),
+      appBar: AppBar(
+        title: const Text('Squiggly Text'),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
         children: [
           Text(
-            'Interactive text preview',
+            'Interactive preview',
             style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 4),
           Text(
-            'Adjust typography and text behavior to see the widget respond.',
+            'The handwriting face trembles in place. Use Wave + letters to keep both the glyphs and the underline moving.',
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 20),
@@ -102,34 +97,42 @@ class _ExamplePageState extends State<ExamplePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  SizedBox(
-                    height: 180,
-                    child: Center(
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: SquigglyText(
-                          _textController.text,
-                          style: previewStyle,
-                          // The example focuses on text; no underline is drawn.
-                          amplitude: 0,
-                          gap: 0,
-                          textAlign: _textAlign,
-                          textDirection: _textDirection,
-                          maxLines: _maxLines,
-                          overflow: _overflow,
-                          animationStyle: _animationStyle,
-                          speed: _speed,
-                          fluidity: _fluidity,
-                          stagger: _stagger,
-                          hoverBehavior: _hoverBehavior,
-                          hoverRadius: _hoverRadius,
-                          hoverOnly: _hoverOnly,
-                          respectReducedMotion: _respectReducedMotion,
+                  Text(
+                    'Animated glyph preview',
+                    style: theme.textTheme.labelLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color:
+                          theme.colorScheme.onSurface.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 28,
+                      ),
+                      child: SquigglyText(
+                        _textController.text,
+                        style: previewStyle.copyWith(
+                          color: theme.colorScheme.onSurface,
                         ),
+                        squiggleColor: _squiggleColor,
+                        amplitude: _amplitude,
+                        wavelength: _wavelength,
+                        gap: _gap,
+                        strokeWidth: 2,
+                        textAlign: TextAlign.center,
+                        animationStyle: _animationStyle,
+                        speed: 1,
+                        hoverBehavior: _hoverBehavior,
+                        hoverOnly: _hoverOnly,
+                        respectReducedMotion: _respectReducedMotion,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
                   TextField(
                     controller: _textController,
                     decoration: const InputDecoration(
@@ -140,137 +143,91 @@ class _ExamplePageState extends State<ExamplePage> {
                   ),
                   const SizedBox(height: 16),
                   _SliderSetting(
-                    label: 'Font size',
-                    value: _fontSize,
-                    min: 16,
-                    max: 64,
-                    divisions: 24,
-                    onChanged: (value) => setState(() => _fontSize = value),
+                    label: 'Amplitude',
+                    value: _amplitude,
+                    min: 0,
+                    max: 20,
+                    divisions: 40,
+                    onChanged: (value) => setState(() => _amplitude = value),
                   ),
                   _SliderSetting(
-                    label: 'Letter spacing',
-                    value: _letterSpacing,
-                    min: -2,
-                    max: 8,
+                    label: 'Wavelength',
+                    value: _wavelength,
+                    min: 4,
+                    max: 24,
                     divisions: 20,
-                    onChanged: (value) =>
-                        setState(() => _letterSpacing = value),
+                    onChanged: (value) => setState(() => _wavelength = value),
                   ),
                   _SliderSetting(
-                    label: 'Line height',
-                    value: _lineHeight,
-                    min: 0.8,
-                    max: 2,
-                    divisions: 12,
-                    onChanged: (value) => setState(() => _lineHeight = value),
+                    label: 'Gap',
+                    value: _gap,
+                    min: 0,
+                    max: 8,
+                    divisions: 16,
+                    onChanged: (value) => setState(() => _gap = value),
                   ),
-                  DropdownButtonFormField<FontWeight>(
-                    initialValue: _fontWeight,
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<SquigglyAnimationStyle>(
+                    initialValue: _animationStyle,
                     decoration: const InputDecoration(
-                      labelText: 'Font weight',
+                      labelText: 'Animation style',
                       border: OutlineInputBorder(),
                     ),
-                    items: [
-                      for (final weight in <FontWeight>[
-                        FontWeight.w300,
-                        FontWeight.w400,
-                        FontWeight.w500,
-                        FontWeight.w700,
-                        FontWeight.w900,
-                      ])
-                        DropdownMenuItem(
-                          value: weight,
-                          child: Text('Weight ${weight.value}'),
-                        ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: SquigglyAnimationStyle.none,
+                        child: Text('none (static)'),
+                      ),
+                      DropdownMenuItem(
+                        value: SquigglyAnimationStyle.wave,
+                        child: Text('wave (underline only)'),
+                      ),
+                      DropdownMenuItem(
+                        value: SquigglyAnimationStyle.letters,
+                        child: Text('letters (glyphs only)'),
+                      ),
+                      DropdownMenuItem(
+                        value: SquigglyAnimationStyle.waveAndLetters,
+                        child: Text('wave + letters'),
+                      ),
                     ],
-                    onChanged: (weight) {
-                      if (weight != null) {
-                        setState(() => _fontWeight = weight);
+                    onChanged: (style) {
+                      if (style != null) {
+                        setState(() => _animationStyle = style);
                       }
                     },
                   ),
-                  const SizedBox(height: 12),
-                  _EnumDropdown<TextAlign>(
-                    label: 'Text alignment',
-                    value: _textAlign,
-                    values: TextAlign.values,
-                    onChanged: (value) => setState(() => _textAlign = value),
+                  const SizedBox(height: 4),
+                  Text(
+                    _animationStyle == SquigglyAnimationStyle.wave
+                        ? 'Wave moves the underline only. Choose wave + letters to animate the glyphs.'
+                        : _animationStyle == SquigglyAnimationStyle.letters
+                            ? 'Letters tremble in place. The underline stays static.'
+                            : _animationStyle ==
+                                    SquigglyAnimationStyle.waveAndLetters
+                                ? 'Glyphs and underline both animate.'
+                                : 'Static text and underline.',
+                    style: theme.textTheme.bodySmall,
                   ),
                   const SizedBox(height: 12),
-                  _EnumDropdown<TextDirection>(
-                    label: 'Text direction',
-                    value: _textDirection,
-                    values: TextDirection.values,
-                    onChanged: (value) =>
-                        setState(() => _textDirection = value),
-                  ),
-                  const SizedBox(height: 12),
-                  _EnumDropdown<TextOverflow>(
-                    label: 'Overflow',
-                    value: _overflow,
-                    values: TextOverflow.values,
-                    onChanged: (value) => setState(() => _overflow = value),
-                  ),
-                  _SliderSetting(
-                    label: 'Max lines',
-                    value: _maxLines.toDouble(),
-                    min: 1,
-                    max: 5,
-                    divisions: 4,
-                    valueText: '$_maxLines',
-                    onChanged: (value) =>
-                        setState(() => _maxLines = value.round()),
-                  ),
-                  const SizedBox(height: 8),
-                  _EnumDropdown<SquigglyAnimationStyle>(
-                    label: 'Text animation',
-                    value: _animationStyle,
-                    values: const [
-                      SquigglyAnimationStyle.none,
-                      SquigglyAnimationStyle.letters,
+                  DropdownButtonFormField<SquigglyHoverBehavior>(
+                    initialValue: _hoverBehavior,
+                    decoration: const InputDecoration(
+                      labelText: 'Pointer interaction',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: [
+                      for (final behavior in SquigglyHoverBehavior.values)
+                        DropdownMenuItem(
+                          value: behavior,
+                          child: Text(behavior.name),
+                        ),
                     ],
-                    onChanged: (value) =>
-                        setState(() => _animationStyle = value),
-                  ),
-                  _SliderSetting(
-                    label: 'Animation speed',
-                    value: _speed,
-                    min: 0,
-                    max: 3,
-                    divisions: 12,
-                    onChanged: (value) => setState(() => _speed = value),
-                  ),
-                  _SliderSetting(
-                    label: 'Fluidity',
-                    value: _fluidity,
-                    min: 0,
-                    max: 1,
-                    divisions: 10,
-                    onChanged: (value) => setState(() => _fluidity = value),
-                  ),
-                  _SliderSetting(
-                    label: 'Letter stagger',
-                    value: _stagger,
-                    min: 0,
-                    max: 1,
-                    divisions: 10,
-                    onChanged: (value) => setState(() => _stagger = value),
-                  ),
-                  const SizedBox(height: 8),
-                  _EnumDropdown<SquigglyHoverBehavior>(
-                    label: 'Pointer interaction',
-                    value: _hoverBehavior,
-                    values: SquigglyHoverBehavior.values,
-                    onChanged: (value) =>
-                        setState(() => _hoverBehavior = value),
-                  ),
-                  _SliderSetting(
-                    label: 'Pointer radius',
-                    value: _hoverRadius,
-                    min: 16,
-                    max: 120,
-                    divisions: 13,
-                    onChanged: (value) => setState(() => _hoverRadius = value),
+                    onChanged: (behavior) {
+                      if (behavior != null) {
+                        setState(() => _hoverBehavior = behavior);
+                      }
+                    },
                   ),
                   SwitchListTile.adaptive(
                     contentPadding: EdgeInsets.zero,
@@ -286,8 +243,6 @@ class _ExamplePageState extends State<ExamplePage> {
                         setState(() => _respectReducedMotion = value),
                   ),
                   const SizedBox(height: 8),
-                  Text('Text color', style: theme.textTheme.titleSmall),
-                  const SizedBox(height: 8),
                   Wrap(
                     spacing: 12,
                     children: [
@@ -295,12 +250,53 @@ class _ExamplePageState extends State<ExamplePage> {
                         ChoiceChip(
                           label: const SizedBox.shrink(),
                           avatar: CircleAvatar(backgroundColor: color),
-                          selected: color == _textColor,
-                          onSelected: (_) => setState(() => _textColor = color),
+                          selected: color == _squiggleColor,
+                          onSelected: (_) =>
+                              setState(() => _squiggleColor = color),
                         ),
                     ],
                   ),
                 ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 28),
+          Text(
+            'Layout and accessibility',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 12),
+          const _ExampleSection(
+            title: 'Multiline text',
+            child: SquigglyText(
+              'A longer sentence wraps naturally while every line keeps its underline.',
+              style: TextStyle(fontSize: 22, height: 1.35),
+              squiggleColor: Colors.deepOrange,
+              amplitude: 2.5,
+              wavelength: 9,
+            ),
+          ),
+          const _ExampleSection(
+            title: 'Right-to-left text',
+            child: SquigglyText(
+              'Right-to-left layout sample',
+              textDirection: TextDirection.rtl,
+              textAlign: TextAlign.right,
+              style: TextStyle(fontSize: 24),
+              squiggleColor: Colors.indigo,
+            ),
+          ),
+          _ExampleSection(
+            title: 'Custom semantics label',
+            child: Semantics(
+              label: 'Accessible underlined greeting',
+              child: const SquigglyText(
+                'Hello Flutter',
+                semanticsLabel: 'Accessible underlined greeting',
+                style: TextStyle(fontSize: 24),
+                squiggleColor: Colors.pink,
               ),
             ),
           ),
@@ -318,7 +314,6 @@ class _SliderSetting extends StatelessWidget {
     required this.max,
     required this.divisions,
     required this.onChanged,
-    this.valueText,
   });
 
   final String label;
@@ -327,59 +322,49 @@ class _SliderSetting extends StatelessWidget {
   final double max;
   final int divisions;
   final ValueChanged<double> onChanged;
-  final String? valueText;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        SizedBox(width: 112, child: Text(label)),
+        SizedBox(width: 92, child: Text(label)),
         Expanded(
           child: Slider(
             value: value,
             min: min,
             max: max,
             divisions: divisions,
-            label: valueText ?? value.toStringAsFixed(1),
+            label: value.toStringAsFixed(1),
             onChanged: onChanged,
           ),
         ),
-        SizedBox(width: 38, child: Text(valueText ?? value.toStringAsFixed(1))),
+        SizedBox(
+          width: 32,
+          child: Text(value.toStringAsFixed(1)),
+        ),
       ],
     );
   }
 }
 
-class _EnumDropdown<T extends Enum> extends StatelessWidget {
-  const _EnumDropdown({
-    required this.label,
-    required this.value,
-    required this.values,
-    required this.onChanged,
-  });
+class _ExampleSection extends StatelessWidget {
+  const _ExampleSection({required this.title, required this.child});
 
-  final String label;
-  final T value;
-  final List<T> values;
-  final ValueChanged<T> onChanged;
+  final String title;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    return DropdownButtonFormField<T>(
-      initialValue: value,
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          child,
+        ],
       ),
-      items: [
-        for (final option in values)
-          DropdownMenuItem(value: option, child: Text(option.name)),
-      ],
-      onChanged: (option) {
-        if (option != null) {
-          onChanged(option);
-        }
-      },
     );
   }
 }

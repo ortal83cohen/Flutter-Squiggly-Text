@@ -1,14 +1,24 @@
 # flutter_squiggly_text
 
+[![pub package](https://img.shields.io/pub/v/flutter_squiggly_text.svg)](https://pub.dev/packages/flutter_squiggly_text)
+[![pub points](https://img.shields.io/pub/points/flutter_squiggly_text)](https://pub.dev/packages/flutter_squiggly_text/score)
+[![popularity](https://img.shields.io/pub/popularity/flutter_squiggly_text)](https://pub.dev/packages/flutter_squiggly_text/score)
+[![likes](https://img.shields.io/pub/likes/flutter_squiggly_text)](https://pub.dev/packages/flutter_squiggly_text/score)
+[![CI](https://github.com/ortal83cohen/Flutter-Squiggly-Text/actions/workflows/platforms.yml/badge.svg)](https://github.com/ortal83cohen/Flutter-Squiggly-Text/actions/workflows/platforms.yml)
+[![platform](https://img.shields.io/badge/platform-android%20%7C%20ios%20%7C%20web%20%7C%20windows%20%7C%20macos%20%7C%20linux-blue)](https://pub.dev/packages/flutter_squiggly_text)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Add a customizable squiggly underline to Flutter text, with optional animation
 and pointer interaction.
+
+![SquigglyText example](screenshots/example.gif)
 
 ## Features
 
 - Static or animated underlines with configurable amplitude, wavelength, gap,
 	stroke width, color, and speed.
-- Letter animation that preserves grapheme clusters, including combining marks
-	and emoji sequences.
+- CodePen-style full-run glyph displacement that preserves shaping, including
+  combining marks, ligatures, RTL text, and emoji sequences.
 - Pointer interactions for highlighting, lifting, and magnetically pulling nearby letters.
 - Keyboard-focus activation through `hoverOnly` when interaction is configured.
 - Standard Flutter text layout options, including wrapping, alignment,
@@ -52,11 +62,13 @@ const SquigglyText(
 )
 ```
 
-Use `SquigglyAnimationStyle.letters` to animate graphemes or
-`SquigglyAnimationStyle.waveAndLetters` to combine both effects. Animation
-parameters are validated, and `respectReducedMotion` defaults to `true` so
-platform reduced-motion preferences disable the internal ticker and pointer
-response.
+Use `SquigglyAnimationStyle.letters` to tremble the painted text in place, or
+`SquigglyAnimationStyle.waveAndLetters` to combine that displacement with the
+underline. Letter displacement scales with font size using a shared turbulence
+field; `amplitude` remains an underline-only setting. Animation parameters are
+validated, and
+`respectReducedMotion` defaults to `true` so platform reduced-motion
+preferences disable the internal ticker and pointer response.
 
 Pointer interaction can be enabled with `hoverBehavior` and `hoverRadius`:
 
@@ -69,8 +81,8 @@ const SquigglyText(
 )
 ```
 
-`highlight` brightens nearby graphemes, while `liftLetters` and `magnetic` lift
-nearby graphemes with a bounded falloff. When animation is enabled, `hoverOnly`
+`highlight` is reserved for future visual polish, while `liftLetters` and
+`magnetic` can influence the shared painted field with a bounded falloff. When animation is enabled, `hoverOnly`
 waits for pointer input or keyboard focus. Configured interaction participates
 in keyboard focus traversal; the default static widget does not request focus.
 
@@ -86,7 +98,7 @@ The main public API is the `SquigglyText` widget:
 | --- | --- |
 | `style` and `squiggleColor` | Configure text and underline appearance. |
 | `amplitude`, `wavelength`, `strokeWidth`, and `gap` | Configure underline geometry. |
-| `animationStyle`, `speed`, `fluidity`, and `stagger` | Configure animation. |
+| `animationStyle`, `speed`, `fluidity`, and `stagger` | Configure animation. `speed` controls wave cycles per second and the letter displacement cadence. |
 | `hoverBehavior`, `hoverRadius`, and `hoverOnly` | Configure pointer and focus interaction. |
 | `respectReducedMotion` and `pauseWhenNotVisible` | Control when animation runs. |
 | `semanticsLabel` | Provide an alternative accessibility label. |
@@ -96,9 +108,10 @@ reference.
 
 ## Example application
 
-The [`example/`](example/) directory contains an interactive preview with
-controls for underline geometry, color, wrapping, right-to-left text, and
-accessibility semantics.
+The looping preview at the top of this README shows the example app without
+opening a video player. The [`example/`](example/) directory contains the
+interactive preview with Amatic SC, glyph displacement, underline geometry,
+color, wrapping, right-to-left text, and accessibility semantics.
 
 ```shell
 cd example
