@@ -1,8 +1,14 @@
-name: Publish to pub.dev
+name: publish
 
-# Publish a package version when a matching release tag is pushed. Before enabling
-# this workflow, configure pub.dev publishing for this repository with the tag
-# pattern v{{version}}.
+# Publishes the package to pub.dev when release.yml pushes a version tag. Authentication is a
+# short-lived OpenID Connect token signed by GitHub and exchanged with pub.dev, so no pub.dev
+# credential is stored in this repository.
+#
+# Operator prerequisite, outside this file: on the pub.dev admin tab for flutter_squiggly_text,
+# enable publishing from GitHub Actions with repository ortal83cohen/Flutter-Squiggly-Text and
+# tag pattern v{{version}}. The pattern must match the tag filter below or no run can publish.
+# Automated publishing can be enabled only after the first version exists on pub.dev.
+
 on:
   push:
     tags:
@@ -10,23 +16,28 @@ on:
 
 jobs:
   publish:
-    name: Publish package
+    name: Publish to pub.dev
     runs-on: ubuntu-latest
     permissions:
-      contents: read
       id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
-      # Resolve dependencies before setup-dart provisions the temporary pub.dev token.
+      # Resolve public dependencies before setup-dart provisions the temporary pub.dev token.
+      # An invalid or rejected token can otherwise make public packages appear unavailable.
       - uses: flutter-actions/setup-flutter@v4
         with:
           channel: stable
       - name: Install dependencies
         run: flutter pub get
 
+      # Provision OIDC authentication only for the publication steps.
       - uses: dart-lang/setup-dart@v1
-      - name: Validate package
+      - uses: flutter-actions/setup-flutter@v4
+        with:
+          channel: stable
+      - name: Publish - dry run
         run: flutter pub publish --dry-run
       - name: Publish to pub.dev
         run: flutter pub publish --force

@@ -82,7 +82,8 @@ void main() {
     expect(find.bySemanticsLabel('Hello'), findsOneWidget);
   });
 
-  testWidgets('magnetic hover participates in pointer activation', (tester) async {
+  testWidgets('magnetic hover participates in pointer activation',
+      (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: SquigglyText(

@@ -1,0 +1,99 @@
+name: release
+
+# Bumps the patch version on every push to main, then pushes an annotated tag that
+# publish.yml turns into a pub.dev release. Publishing itself lives in publish.yml because
+# pub.dev only accepts an automated publish from a tag-triggered workflow run.
+#
+# Operator prerequisites, both outside this file:
+#   1. A repository secret named RELEASE_GITHUB_TOKEN holding a personal access token or a
+#      GitHub App installation token with write access to repository contents. The default
+#      GITHUB_TOKEN cannot be used: events it creates do not start new workflow runs, so the
+#      tag it pushed would never trigger publish.yml.
+#   2. Branch protection on main must allow that token to push the release commit.
+#
+# No commit message written here carries one of GitHub's bracketed workflow-skip
+# instructions. The annotated tag points at the release commit, so such an instruction on
+# that commit risks suppressing the tag-triggered publish run as well. The loop guard on the
+# job below does that job instead, and it is evaluated from the push payload.
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
+jobs:
+  bump-and-tag:
+    name: Bump patch version and tag
+    runs-on: ubuntu-latest
+    # Loop guard: the push of the release commit re-enters this workflow, because it is made
+    # with RELEASE_GITHUB_TOKEN. Skip the run when the head commit is one this job wrote.
+    # The prefix here must stay identical to the one in the "Commit the bump" step below.
+    if: "${{ !startsWith(github.event.head_commit.message, 'chore(release): v') }}"
+    steps:
+      - name: Require the release token
+        env:
+          RELEASE_GITHUB_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
+        run: |
+          if [ -z "${RELEASE_GITHUB_TOKEN}" ]; then
+            echo "Missing repository secret RELEASE_GITHUB_TOKEN." >&2
+            echo "Add a token with contents write access before a release can run." >&2
+            exit 1
+          fi
+          echo "RELEASE_GITHUB_TOKEN is present."
+
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.RELEASE_GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Run package check suite
+        run: bash tools/check.sh
+
+      - name: Bump patch version
+        id: bump
+        run: |
+          new_version=$(sh tools/bump_patch_version.sh)
+          echo "version=${new_version}" >> "$GITHUB_OUTPUT"
+          echo "Bumped to ${new_version}."
+
+      - name: Reject an existing tag for this version
+        run: |
+          tag="v${{ steps.bump.outputs.version }}"
+          git fetch --tags --force
+          if git rev-parse --verify --quiet "refs/tags/${tag}" >/dev/null; then
+            echo "Tag ${tag} already exists locally." >&2
+            exit 1
+          fi
+          if [ -n "$(git ls-remote --tags origin "refs/tags/${tag}")" ]; then
+            echo "Tag ${tag} already exists on the remote." >&2
+            exit 1
+          fi
+          echo "Tag ${tag} is free."
+
+      - name: Commit the bump
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add pubspec.yaml CHANGELOG.md
+          git commit -m 'chore(release): v${{ steps.bump.outputs.version }}'
+
+      - name: Push the commit
+        run: git push origin HEAD:main
+
+      - name: Push the tag
+        run: |
+          tag="v${{ steps.bump.outputs.version }}"
+          git tag -a "${tag}" -m "Release ${tag}"
+          git push origin "refs/tags/${tag}"

@@ -17,3 +17,4 @@ All wiki content must be written in English and use Markdown. Keep this file up 
 - [SquigglyText Animation Technical Research](research/squiggly-text-animation-technical-research.md)
 - [SquigglyText Animation Implementation Plan](plans/squiggly-text-animation-implementation-plan.md)
 - [SquigglyText Implementation Summary](summaries/squiggly-text-implementation-summary.md)
+- [pub.dev release pipeline](summaries/pubdev-release-pipeline.md)

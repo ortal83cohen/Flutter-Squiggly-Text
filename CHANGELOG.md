@@ -1,3 +1,5 @@
+# Changelog
+
 ## Unreleased
 
 - Implemented hover and keyboard focus interaction for configured widgets,

@@ -456,7 +456,8 @@ class _SquigglyTextPainter extends CustomPainter {
       final letterPhase = _phase + grapheme.index * stagger;
       final targetOffset = math.sin(letterPhase) * grapheme.amplitude;
       final influence = _influence(center);
-      final pointerOffset = _pointerOffsetForGrapheme(grapheme, center, influence);
+      final pointerOffset =
+          _pointerOffsetForGrapheme(grapheme, center, influence);
       final offset = targetOffset * (1 - fluidity * 0.35) + pointerOffset.dy;
       canvas.save();
       canvas.translate(pointerOffset.dx, offset);
