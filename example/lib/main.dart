@@ -43,12 +43,12 @@ class _ExamplePageState extends State<ExamplePage> {
   ];
 
   final _textController = TextEditingController(
-    text: 'Make every word ripple',
+    text: 'Squiggly Text',
   );
-  double _amplitude = 3;
-  double _wavelength = 10;
-  double _gap = 2;
-  Color _squiggleColor = Colors.teal;
+  double _amplitude = 6;
+  double _wavelength = 14;
+  double _gap = 4;
+  Color _squiggleColor = Colors.deepOrange;
   SquigglyAnimationStyle _animationStyle =
       SquigglyAnimationStyle.waveAndLetters;
   SquigglyHoverBehavior _hoverBehavior = SquigglyHoverBehavior.none;
@@ -64,9 +64,12 @@ class _ExamplePageState extends State<ExamplePage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final previewStyle = theme.textTheme.headlineMedium?.copyWith(
+    const previewStyle = TextStyle(
+      fontFamily: 'AmaticSC',
+      fontSize: 88,
       fontWeight: FontWeight.w700,
-      color: theme.colorScheme.onSurface,
+      height: 1,
+      color: Color(0xFF1A1A1A),
     );
 
     return Scaffold(
@@ -84,7 +87,7 @@ class _ExamplePageState extends State<ExamplePage> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Tune the underline, then compare the layout examples below.',
+            'The handwriting face should wriggle in place. Use Wave + letters to keep both the glyphs and the underline moving.',
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 20),
@@ -94,18 +97,40 @@ class _ExamplePageState extends State<ExamplePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  SquigglyText(
-                    _textController.text,
-                    style: previewStyle,
-                    squiggleColor: _squiggleColor,
-                    amplitude: _amplitude,
-                    wavelength: _wavelength,
-                    gap: _gap,
-                    textAlign: TextAlign.center,
-                    animationStyle: _animationStyle,
-                    hoverBehavior: _hoverBehavior,
-                    hoverOnly: _hoverOnly,
-                    respectReducedMotion: _respectReducedMotion,
+                  Text(
+                    'Animated glyph preview',
+                    style: theme.textTheme.labelLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 28,
+                      ),
+                      child: SquigglyText(
+                        _textController.text,
+                        style: previewStyle.copyWith(
+                          color: theme.colorScheme.onSurface,
+                        ),
+                        squiggleColor: _squiggleColor,
+                        amplitude: _amplitude,
+                        wavelength: _wavelength,
+                        gap: _gap,
+                        strokeWidth: 2,
+                        textAlign: TextAlign.center,
+                        animationStyle: _animationStyle,
+                        speed: 2.4,
+                        stagger: 0.9,
+                        hoverBehavior: _hoverBehavior,
+                        hoverOnly: _hoverOnly,
+                        respectReducedMotion: _respectReducedMotion,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 24),
                   TextField(
@@ -121,8 +146,8 @@ class _ExamplePageState extends State<ExamplePage> {
                     label: 'Amplitude',
                     value: _amplitude,
                     min: 0,
-                    max: 8,
-                    divisions: 16,
+                    max: 20,
+                    divisions: 40,
                     onChanged: (value) => setState(() => _amplitude = value),
                   ),
                   _SliderSetting(
@@ -148,18 +173,41 @@ class _ExamplePageState extends State<ExamplePage> {
                       labelText: 'Animation style',
                       border: OutlineInputBorder(),
                     ),
-                    items: [
-                      for (final style in SquigglyAnimationStyle.values)
-                        DropdownMenuItem(
-                          value: style,
-                          child: Text(style.name),
-                        ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: SquigglyAnimationStyle.none,
+                        child: Text('none (static)'),
+                      ),
+                      DropdownMenuItem(
+                        value: SquigglyAnimationStyle.wave,
+                        child: Text('wave (underline only)'),
+                      ),
+                      DropdownMenuItem(
+                        value: SquigglyAnimationStyle.letters,
+                        child: Text('letters (glyphs only)'),
+                      ),
+                      DropdownMenuItem(
+                        value: SquigglyAnimationStyle.waveAndLetters,
+                        child: Text('wave + letters'),
+                      ),
                     ],
                     onChanged: (style) {
                       if (style != null) {
                         setState(() => _animationStyle = style);
                       }
                     },
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _animationStyle == SquigglyAnimationStyle.wave
+                        ? 'Wave moves the underline only. Choose wave + letters to animate the glyphs.'
+                        : _animationStyle == SquigglyAnimationStyle.letters
+                            ? 'Letters wriggle in place. The underline stays static.'
+                            : _animationStyle ==
+                                    SquigglyAnimationStyle.waveAndLetters
+                                ? 'Glyphs and underline both animate.'
+                                : 'Static text and underline.',
+                    style: theme.textTheme.bodySmall,
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<SquigglyHoverBehavior>(

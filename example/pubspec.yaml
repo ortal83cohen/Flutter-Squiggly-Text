@@ -26,3 +26,9 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true
+  fonts:
+    - family: AmaticSC
+      fonts:
+        - asset: fonts/AmaticSC-Regular.ttf
+        - asset: fonts/AmaticSC-Bold.ttf
+          weight: 700

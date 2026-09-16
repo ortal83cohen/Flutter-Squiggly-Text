@@ -12,12 +12,15 @@ import 'package:flutter_squiggly_text_example/main.dart';
 
 void main() {
   testWidgets('renders the example app', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1280, 4000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     await tester.pumpWidget(const SquigglyTextExampleApp());
 
     expect(find.text('Interactive preview'), findsOneWidget);
-
-    await tester.drag(find.byType(ListView), const Offset(0, -500));
-    await tester.pump();
+    expect(find.text('Animated glyph preview'), findsOneWidget);
     expect(find.text('Layout and accessibility'), findsOneWidget);
   });
 }

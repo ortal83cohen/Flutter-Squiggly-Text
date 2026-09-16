@@ -96,7 +96,10 @@ class SquigglyText extends StatefulWidget {
   /// The squiggle color. Defaults to [style]'s color or the current theme.
   final Color? squiggleColor;
 
-  /// The height of the wave in logical pixels.
+  /// The height of the underline wave in logical pixels.
+  ///
+  /// Letter animation uses the larger of this value and a fraction of the
+  /// font size so glyph motion stays visible.
   final double amplitude;
 
   /// The distance between matching points in consecutive waves.
@@ -388,7 +391,37 @@ class _SquigglyTextPainter extends CustomPainter {
   List<_GraphemeLayout> _graphemes = const [];
   bool _canPaintLetters = false;
 
-  double get height => textPainter.height + gap + amplitude + strokeWidth;
+  double get _glyphAmplitude {
+    final fontSize = style.fontSize ?? 14;
+    return math.min(
+      fontSize * 0.35,
+      math.max(amplitude, fontSize * 0.16),
+    );
+  }
+
+  bool get _animatesLetters =>
+      animation != null &&
+      (animationStyle == SquigglyAnimationStyle.letters ||
+          animationStyle == SquigglyAnimationStyle.waveAndLetters);
+
+  bool get _animatesWave =>
+      animation != null &&
+      (animationStyle == SquigglyAnimationStyle.wave ||
+          animationStyle == SquigglyAnimationStyle.waveAndLetters);
+
+  double get _glyphMotionInset =>
+      animationStyle == SquigglyAnimationStyle.letters ||
+              animationStyle == SquigglyAnimationStyle.waveAndLetters ||
+              hoverBehavior != SquigglyHoverBehavior.none
+          ? _glyphAmplitude
+          : 0;
+
+  double get height =>
+      textPainter.height +
+      gap +
+      amplitude +
+      strokeWidth +
+      _glyphMotionInset * 2;
 
   void layout({required double maxWidth}) {
     textPainter.layout(maxWidth: maxWidth);
@@ -407,6 +440,8 @@ class _SquigglyTextPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    canvas.save();
+    canvas.translate(0, _glyphMotionInset);
     if (_canPaintLetters) {
       _paintLetters(canvas);
     } else {
@@ -424,27 +459,43 @@ class _SquigglyTextPainter extends CustomPainter {
       if (width <= 0 || amplitude == 0) {
         continue;
       }
-      final path = Path();
-      final startX = _lineStart(line, size.width);
-      final baseline = line.baseline + gap + strokeWidth / 2;
-      final phase = _phase;
-      final step = wavelength / 2;
-      path.moveTo(startX, baseline);
-      for (var x = 0.0; x < width; x += step) {
-        final endX = math.min(x + step, width);
-        final controlX = x + (endX - x) / 2;
-        final direction = animation == null
-            ? (((x / step).round().isEven) ? 1 : -1).toDouble()
-            : math.sin(2 * math.pi * controlX / wavelength + phase);
-        path.quadraticBezierTo(
-          startX + controlX,
-          baseline + amplitude * direction,
-          startX + endX,
-          baseline,
-        );
-      }
-      canvas.drawPath(path, paint);
+      canvas.drawPath(_underlinePath(line, size.width), paint);
     }
+    canvas.restore();
+  }
+
+  Path _underlinePath(LineMetrics line, double width) {
+    final path = Path();
+    final startX = _lineStart(line, width);
+    final baseline = line.baseline + gap + strokeWidth / 2;
+    final lineWidth = line.width;
+    if (_animatesWave) {
+      final sample = math.max(1.5, wavelength / 8);
+      double waveY(double x) =>
+          baseline +
+          amplitude * math.sin(2 * math.pi * x / wavelength + _phase);
+      path.moveTo(startX, waveY(0));
+      for (var x = sample; x < lineWidth; x += sample) {
+        path.lineTo(startX + x, waveY(x));
+      }
+      path.lineTo(startX + lineWidth, waveY(lineWidth));
+      return path;
+    }
+
+    final step = wavelength / 2;
+    path.moveTo(startX, baseline);
+    for (var x = 0.0; x < lineWidth; x += step) {
+      final endX = math.min(x + step, lineWidth);
+      final controlX = x + (endX - x) / 2;
+      final direction = ((x / step).round().isEven ? 1 : -1).toDouble();
+      path.quadraticBezierTo(
+        startX + controlX,
+        baseline + amplitude * direction,
+        startX + endX,
+        baseline,
+      );
+    }
+    return path;
   }
 
   double get _phase => (animation?.value ?? 0) * 2 * math.pi * speed;
@@ -453,14 +504,27 @@ class _SquigglyTextPainter extends CustomPainter {
     for (final grapheme in _graphemes) {
       final center = grapheme.offset +
           Offset(grapheme.painter.width / 2, grapheme.painter.height / 2);
-      final letterPhase = _phase + grapheme.index * stagger;
-      final targetOffset = math.sin(letterPhase) * grapheme.amplitude;
       final influence = _influence(center);
       final pointerOffset =
           _pointerOffsetForGrapheme(grapheme, center, influence);
-      final offset = targetOffset * (1 - fluidity * 0.35) + pointerOffset.dy;
+      var dx = pointerOffset.dx;
+      var dy = pointerOffset.dy;
+      var rotation = 0.0;
+      if (_animatesLetters) {
+        final motion = _glyphMotion(grapheme);
+        dx += motion.dx;
+        dy += motion.dy;
+        rotation = motion.rotation;
+      }
       canvas.save();
-      canvas.translate(pointerOffset.dx, offset);
+      canvas.translate(center.dx + dx, center.dy + dy);
+      if (rotation != 0) {
+        canvas.rotate(rotation);
+      }
+      canvas.translate(
+        -grapheme.painter.width / 2,
+        -grapheme.painter.height / 2,
+      );
       if (hoverBehavior == SquigglyHoverBehavior.highlight && influence > 0) {
         final highlightedPainter = TextPainter(
           text: TextSpan(
@@ -477,12 +541,25 @@ class _SquigglyTextPainter extends CustomPainter {
           locale: textPainter.locale,
           strutStyle: textPainter.strutStyle,
         )..layout();
-        highlightedPainter.paint(canvas, grapheme.offset);
+        highlightedPainter.paint(canvas, Offset.zero);
       } else {
-        grapheme.painter.paint(canvas, grapheme.offset);
+        grapheme.painter.paint(canvas, Offset.zero);
       }
       canvas.restore();
     }
+  }
+
+  ({double dx, double dy, double rotation}) _glyphMotion(
+    _GraphemeLayout grapheme,
+  ) {
+    final seed = grapheme.index * (stagger + 2.399);
+    final phase = _phase;
+    final letterAmplitude = grapheme.amplitude;
+    return (
+      dx: math.cos(phase * 1.17 + seed * 1.7) * letterAmplitude * 0.45,
+      dy: math.sin(phase + seed) * letterAmplitude,
+      rotation: math.sin(phase * 0.85 + seed * 2.1) * 0.14,
+    );
   }
 
   Offset _pointerOffsetForGrapheme(
@@ -588,7 +665,7 @@ class _SquigglyTextPainter extends CustomPainter {
             box.left,
             line.baseline - letterMetrics.single.baseline,
           ),
-          amplitude: math.min(3, line.height * 0.08),
+          amplitude: _glyphAmplitude,
         ),
       );
       start = end;
@@ -612,13 +689,28 @@ class _SquigglyTextPainter extends CustomPainter {
   }
 
   LineMetrics? _lineForBox(List<LineMetrics> lines, TextBox box) {
+    if (lines.isEmpty) {
+      return null;
+    }
+    if (lines.length == 1) {
+      return lines.single;
+    }
+    final boxMid = (box.top + box.bottom) / 2;
+    LineMetrics? best;
+    var bestDistance = double.infinity;
     for (final line in lines) {
       final lineTop = line.baseline - line.ascent;
-      if ((lineTop - box.top).abs() < 0.5) {
+      final lineBottom = line.baseline + line.descent;
+      if (boxMid >= lineTop - 1 && boxMid <= lineBottom + 1) {
         return line;
       }
+      final distance = ((lineTop + lineBottom) / 2 - boxMid).abs();
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = line;
+      }
     }
-    return null;
+    return best;
   }
 
   bool _containsAmbiguousShaping(String text) {

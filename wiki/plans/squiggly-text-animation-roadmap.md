@@ -27,7 +27,11 @@ The implementation has reached the core product milestone and now includes:
 - keyboard focus participation when interaction is configured
 - reduced motion respect and lifecycle-aware pause logic
 
-The remaining work is primarily release polish and advanced accessibility refinements rather than core animation gaps. This status reflects the current codebase as of 2026-09-16 and should be treated as a live implementation record, not as a backlog for missing essential features.
+The remaining work is example polish plus a visual course correction for
+letter motion: the first letter implementation was too small to see and did
+not resemble the intended glyph jitter. See
+[SquigglyText Visual Course Correction](squiggly-text-visual-course-correction.md).
+This status reflects the current codebase as of 2026-09-16.
 
 ## 3. Current Baseline
 

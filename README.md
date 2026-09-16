@@ -52,11 +52,12 @@ const SquigglyText(
 )
 ```
 
-Use `SquigglyAnimationStyle.letters` to animate graphemes or
-`SquigglyAnimationStyle.waveAndLetters` to combine both effects. Animation
-parameters are validated, and `respectReducedMotion` defaults to `true` so
-platform reduced-motion preferences disable the internal ticker and pointer
-response.
+Use `SquigglyAnimationStyle.letters` to wriggle graphemes in place, or
+`SquigglyAnimationStyle.waveAndLetters` to combine that motion with the
+underline. Letter motion scales with font size and `amplitude` so the glyphs
+stay readable and visibly alive. Animation parameters are validated, and
+`respectReducedMotion` defaults to `true` so platform reduced-motion
+preferences disable the internal ticker and pointer response.
 
 Pointer interaction can be enabled with `hoverBehavior` and `hoverRadius`:
 
@@ -97,8 +98,8 @@ reference.
 ## Example application
 
 The [`example/`](example/) directory contains an interactive preview with
-controls for underline geometry, color, wrapping, right-to-left text, and
-accessibility semantics.
+Amatic SC, glyph animation, underline geometry, color, wrapping,
+right-to-left text, and accessibility semantics.
 
 ```shell
 cd example

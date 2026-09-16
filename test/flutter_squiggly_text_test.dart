@@ -195,6 +195,37 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
+  testWidgets('letter animation reserves space for glyph motion',
+      (tester) async {
+    const style = TextStyle(fontSize: 48);
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Center(
+          child: SquigglyText(
+            'Hello',
+            style: style,
+            animationStyle: SquigglyAnimationStyle.letters,
+          ),
+        ),
+      ),
+    );
+    final animatedHeight = tester.getSize(find.byType(SquigglyText)).height;
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Center(
+          child: SquigglyText(
+            'Hello',
+            style: style,
+          ),
+        ),
+      ),
+    );
+    final staticHeight = tester.getSize(find.byType(SquigglyText)).height;
+
+    expect(animatedHeight, greaterThan(staticHeight));
+  });
+
   testWidgets('letters and waveAndLetters animate without splitting graphemes',
       (tester) async {
     await tester.pumpWidget(

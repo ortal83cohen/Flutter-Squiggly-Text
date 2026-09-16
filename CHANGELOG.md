@@ -6,6 +6,10 @@
 
 ## Unreleased
 
+- Made `letters` and `waveAndLetters` use visible per-glyph jitter, rotation,
+	and font-size-relative amplitude instead of a 2px vertical bounce.
+- Updated the example preview to use Amatic SC and show glyph animation by
+	default.
 - Implemented hover and keyboard focus interaction for configured widgets,
 	including bounded highlight, letter-lift, and magnetic pointer responses.
 - Implemented `hoverOnly`, reduced-motion suppression, and best-effort app
