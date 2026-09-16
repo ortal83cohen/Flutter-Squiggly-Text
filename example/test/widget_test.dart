@@ -16,6 +16,9 @@ void main() {
     expect(find.text('Interactive text preview'), findsOneWidget);
     expect(find.text('Preview text'), findsOneWidget);
     expect(find.text('Font size'), findsOneWidget);
-    expect(find.text('Text animation'), findsOneWidget);
+    expect(find.text('Text animation'), findsNothing);
+    expect(find.text('Amplitude'), findsNothing);
+    expect(find.text('Wavelength'), findsNothing);
+    expect(find.text('Gap'), findsNothing);
   });
 }

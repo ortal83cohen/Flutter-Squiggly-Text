@@ -35,23 +35,13 @@ class ExamplePage extends StatefulWidget {
 }
 
 class _ExamplePageState extends State<ExamplePage> {
-  static const _colors = <Color>[
-    Colors.teal,
-    Colors.deepOrange,
-    Colors.indigo,
-    Colors.pink,
-  ];
-
   final _textController = TextEditingController(
     text: 'Squiggly Text',
   );
-  double _amplitude = 6;
-  double _wavelength = 14;
-  double _gap = 4;
-  Color _squiggleColor = Colors.deepOrange;
-  SquigglyAnimationStyle _animationStyle =
-      SquigglyAnimationStyle.waveAndLetters;
+  double _fontSize = 88;
+  double _speed = 1;
   SquigglyHoverBehavior _hoverBehavior = SquigglyHoverBehavior.none;
+  SquigglyHoverScope _hoverScope = SquigglyHoverScope.all;
   bool _hoverOnly = false;
   bool _respectReducedMotion = false;
 
@@ -64,13 +54,12 @@ class _ExamplePageState extends State<ExamplePage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    const previewStyle = TextStyle(
+    final previewStyle = const TextStyle(
       fontFamily: 'AmaticSC',
-      fontSize: 88,
       fontWeight: FontWeight.w700,
       height: 1,
       color: Color(0xFF1A1A1A),
-    );
+    ).copyWith(fontSize: _fontSize);
 
     return Scaffold(
       appBar: AppBar(
@@ -80,14 +69,14 @@ class _ExamplePageState extends State<ExamplePage> {
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
         children: [
           Text(
-            'Interactive preview',
+            'Interactive text preview',
             style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 4),
           Text(
-            'The handwriting face trembles in place. Use Wave + letters to keep both the glyphs and the underline moving.',
+            'The handwriting face trembles in place. Adjust the text and its letter animation below.',
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 20),
@@ -118,15 +107,13 @@ class _ExamplePageState extends State<ExamplePage> {
                         style: previewStyle.copyWith(
                           color: theme.colorScheme.onSurface,
                         ),
-                        squiggleColor: _squiggleColor,
-                        amplitude: _amplitude,
-                        wavelength: _wavelength,
-                        gap: _gap,
-                        strokeWidth: 2,
+                        amplitude: 0,
                         textAlign: TextAlign.center,
-                        animationStyle: _animationStyle,
-                        speed: 1,
+                        animationStyle: SquigglyAnimationStyle.letters,
+                        speed: _speed,
                         hoverBehavior: _hoverBehavior,
+                        hoverPreview: !_hoverOnly,
+                        hoverScope: _hoverScope,
                         hoverOnly: _hoverOnly,
                         respectReducedMotion: _respectReducedMotion,
                       ),
@@ -143,71 +130,48 @@ class _ExamplePageState extends State<ExamplePage> {
                   ),
                   const SizedBox(height: 16),
                   _SliderSetting(
-                    label: 'Amplitude',
-                    value: _amplitude,
-                    min: 0,
-                    max: 20,
+                    label: 'Font size',
+                    value: _fontSize,
+                    min: 40,
+                    max: 120,
                     divisions: 40,
-                    onChanged: (value) => setState(() => _amplitude = value),
+                    onChanged: (value) => setState(() => _fontSize = value),
                   ),
                   _SliderSetting(
-                    label: 'Wavelength',
-                    value: _wavelength,
-                    min: 4,
-                    max: 24,
-                    divisions: 20,
-                    onChanged: (value) => setState(() => _wavelength = value),
-                  ),
-                  _SliderSetting(
-                    label: 'Gap',
-                    value: _gap,
+                    label: 'Animation speed',
+                    value: _speed,
                     min: 0,
-                    max: 8,
-                    divisions: 16,
-                    onChanged: (value) => setState(() => _gap = value),
-                  ),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<SquigglyAnimationStyle>(
-                    initialValue: _animationStyle,
-                    decoration: const InputDecoration(
-                      labelText: 'Animation style',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: const [
-                      DropdownMenuItem(
-                        value: SquigglyAnimationStyle.none,
-                        child: Text('none (static)'),
-                      ),
-                      DropdownMenuItem(
-                        value: SquigglyAnimationStyle.wave,
-                        child: Text('wave (underline only)'),
-                      ),
-                      DropdownMenuItem(
-                        value: SquigglyAnimationStyle.letters,
-                        child: Text('letters (glyphs only)'),
-                      ),
-                      DropdownMenuItem(
-                        value: SquigglyAnimationStyle.waveAndLetters,
-                        child: Text('wave + letters'),
-                      ),
-                    ],
-                    onChanged: (style) {
-                      if (style != null) {
-                        setState(() => _animationStyle = style);
-                      }
-                    },
+                    max: 3,
+                    divisions: 30,
+                    onChanged: (value) => setState(() => _speed = value),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    _animationStyle == SquigglyAnimationStyle.wave
-                        ? 'Wave moves the underline only. Choose wave + letters to animate the glyphs.'
-                        : _animationStyle == SquigglyAnimationStyle.letters
-                            ? 'Letters tremble in place. The underline stays static.'
-                            : _animationStyle ==
-                                    SquigglyAnimationStyle.waveAndLetters
-                                ? 'Glyphs and underline both animate.'
-                                : 'Static text and underline.',
+                    _hoverOnly
+                        ? 'Move the pointer over the text to activate it.'
+                        : 'Pointer effects preview at the center of the text. '
+                            'Move the pointer over it to interact.',
                     style: theme.textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<SquigglyHoverScope>(
+                    initialValue: _hoverScope,
+                    decoration: const InputDecoration(
+                      labelText: 'Animation range',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: [
+                      for (final scope in SquigglyHoverScope.values)
+                        DropdownMenuItem(
+                          value: scope,
+                          child: Text(_hoverScopeLabel(scope)),
+                        ),
+                    ],
+                    onChanged: (scope) {
+                      if (scope != null) {
+                        setState(() => _hoverScope = scope);
+                      }
+                    },
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<SquigglyHoverBehavior>(
@@ -220,7 +184,7 @@ class _ExamplePageState extends State<ExamplePage> {
                       for (final behavior in SquigglyHoverBehavior.values)
                         DropdownMenuItem(
                           value: behavior,
-                          child: Text(behavior.name),
+                          child: Text(_hoverBehaviorLabel(behavior)),
                         ),
                     ],
                     onChanged: (behavior) {
@@ -242,20 +206,6 @@ class _ExamplePageState extends State<ExamplePage> {
                     onChanged: (value) =>
                         setState(() => _respectReducedMotion = value),
                   ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 12,
-                    children: [
-                      for (final color in _colors)
-                        ChoiceChip(
-                          label: const SizedBox.shrink(),
-                          avatar: CircleAvatar(backgroundColor: color),
-                          selected: color == _squiggleColor,
-                          onSelected: (_) =>
-                              setState(() => _squiggleColor = color),
-                        ),
-                    ],
-                  ),
                 ],
               ),
             ),
@@ -271,11 +221,9 @@ class _ExamplePageState extends State<ExamplePage> {
           const _ExampleSection(
             title: 'Multiline text',
             child: SquigglyText(
-              'A longer sentence wraps naturally while every line keeps its underline.',
+              'A longer sentence wraps naturally while every line keeps its animation.',
               style: TextStyle(fontSize: 22, height: 1.35),
-              squiggleColor: Colors.deepOrange,
-              amplitude: 2.5,
-              wavelength: 9,
+              amplitude: 0,
             ),
           ),
           const _ExampleSection(
@@ -285,24 +233,58 @@ class _ExamplePageState extends State<ExamplePage> {
               textDirection: TextDirection.rtl,
               textAlign: TextAlign.right,
               style: TextStyle(fontSize: 24),
-              squiggleColor: Colors.indigo,
+              amplitude: 0,
             ),
           ),
           _ExampleSection(
             title: 'Custom semantics label',
             child: Semantics(
-              label: 'Accessible underlined greeting',
+              label: 'Accessible animated greeting',
               child: const SquigglyText(
                 'Hello Flutter',
-                semanticsLabel: 'Accessible underlined greeting',
+                semanticsLabel: 'Accessible animated greeting',
                 style: TextStyle(fontSize: 24),
-                squiggleColor: Colors.pink,
+                amplitude: 0,
               ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  String _hoverBehaviorLabel(SquigglyHoverBehavior behavior) {
+    switch (behavior) {
+      case SquigglyHoverBehavior.none:
+        return 'none (static)';
+      case SquigglyHoverBehavior.highlight:
+        return 'highlight';
+      case SquigglyHoverBehavior.shrink:
+        return 'shrink nearby letters';
+      case SquigglyHoverBehavior.enlarge:
+        return 'enlarge nearby letters';
+      case SquigglyHoverBehavior.trembleLetter:
+        return 'tremble hovered letter';
+      case SquigglyHoverBehavior.trembleWord:
+        return 'tremble hovered word';
+      case SquigglyHoverBehavior.repel:
+        return 'repel like a magnet';
+      case SquigglyHoverBehavior.liftLetters:
+        return 'lift nearby letters';
+      case SquigglyHoverBehavior.magnetic:
+        return 'pull like a magnet';
+    }
+  }
+
+  String _hoverScopeLabel(SquigglyHoverScope scope) {
+    switch (scope) {
+      case SquigglyHoverScope.all:
+        return 'all text';
+      case SquigglyHoverScope.word:
+        return 'hovered word';
+      case SquigglyHoverScope.letter:
+        return 'hovered letter';
+    }
   }
 }
 

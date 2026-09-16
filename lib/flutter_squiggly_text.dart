@@ -35,11 +35,38 @@ enum SquigglyHoverBehavior {
   /// Highlights the text under the pointer.
   highlight,
 
+  /// Shrinks letters near the pointer.
+  shrink,
+
+  /// Enlarges letters near the pointer.
+  enlarge,
+
+  /// Trembles the letter nearest to the pointer.
+  trembleLetter,
+
+  /// Trembles a word-sized region around the pointer.
+  trembleWord,
+
+  /// Repels nearby letters away from the pointer.
+  repel,
+
   /// Lifts letters near the pointer.
   liftLetters,
 
   /// Applies a magnetic response near the pointer.
   magnetic,
+}
+
+/// Selects how much text is animated while a pointer interaction is active.
+enum SquigglyHoverScope {
+  /// Animates the complete text.
+  all,
+
+  /// Animates a word-sized region around the pointer.
+  word,
+
+  /// Animates a letter-sized region around the pointer.
+  letter,
 }
 
 /// Displays [text] with a customizable squiggly underline.
@@ -68,6 +95,8 @@ class SquigglyText extends StatefulWidget {
     this.stagger = 0.2,
     this.hoverBehavior = SquigglyHoverBehavior.none,
     this.hoverRadius = 48,
+    this.hoverPreview = false,
+    this.hoverScope = SquigglyHoverScope.all,
     this.hoverOnly = false,
     this.pauseWhenNotVisible = true,
     this.respectReducedMotion = true,
@@ -154,6 +183,12 @@ class SquigglyText extends StatefulWidget {
   /// The pointer influence radius in logical pixels.
   final double hoverRadius;
 
+  /// Whether to show the pointer effect around the text center by default.
+  final bool hoverPreview;
+
+  /// The text region affected while pointer animation is active.
+  final SquigglyHoverScope hoverScope;
+
   /// Whether automatic animation waits for pointer input.
   final bool hoverOnly;
 
@@ -186,6 +221,10 @@ class _SquigglyTextState extends State<SquigglyText>
       widget.hoverBehavior != SquigglyHoverBehavior.none ||
       (widget.hoverOnly &&
           widget.animationStyle != SquigglyAnimationStyle.none);
+
+  bool get _hoverNeedsAnimation =>
+      widget.hoverBehavior == SquigglyHoverBehavior.trembleLetter ||
+      widget.hoverBehavior == SquigglyHoverBehavior.trembleWord;
 
   @override
   void initState() {
@@ -236,6 +275,8 @@ class _SquigglyTextState extends State<SquigglyText>
         oldWidget.speed != widget.speed ||
         oldWidget.hoverOnly != widget.hoverOnly ||
         oldWidget.hoverBehavior != widget.hoverBehavior ||
+        oldWidget.hoverPreview != widget.hoverPreview ||
+        oldWidget.hoverScope != widget.hoverScope ||
         oldWidget.pauseWhenNotVisible != widget.pauseWhenNotVisible ||
         oldWidget.respectReducedMotion != widget.respectReducedMotion) {
       _updateAnimation();
@@ -261,12 +302,13 @@ class _SquigglyTextState extends State<SquigglyText>
     }
     final reducedMotion =
         widget.respectReducedMotion && MediaQuery.of(context).disableAnimations;
+    final interactionActive =
+        _pointerPosition.value != null || _isFocused || widget.hoverPreview;
     final shouldAnimate =
-        widget.animationStyle != SquigglyAnimationStyle.none &&
+        (widget.animationStyle != SquigglyAnimationStyle.none ||
+                (_hoverNeedsAnimation && interactionActive)) &&
             widget.speed > 0 &&
-            (widget.hoverOnly
-                ? _pointerPosition.value != null || _isFocused
-                : true) &&
+            (!widget.hoverOnly || interactionActive) &&
             (!widget.pauseWhenNotVisible || _isAppVisible) &&
             !reducedMotion;
     if (shouldAnimate != _isAnimating) {
@@ -331,6 +373,8 @@ class _SquigglyTextState extends State<SquigglyText>
       hoverBehavior:
           reducedMotion ? SquigglyHoverBehavior.none : widget.hoverBehavior,
       hoverRadius: widget.hoverRadius,
+      hoverPreview: widget.hoverPreview,
+      hoverScope: widget.hoverScope,
     );
     _painter = painter;
     previousPainter?._releaseOwnedResources();
@@ -395,6 +439,8 @@ class _SquigglyTextPainter extends CustomPainter {
     required this.pointerPosition,
     required this.hoverBehavior,
     required this.hoverRadius,
+    required this.hoverPreview,
+    required this.hoverScope,
   })  : textPainter = TextPainter(
           text: TextSpan(text: text, style: style),
           textAlign: textAlign,
@@ -431,6 +477,8 @@ class _SquigglyTextPainter extends CustomPainter {
   final ValueListenable<Offset?> pointerPosition;
   final SquigglyHoverBehavior hoverBehavior;
   final double hoverRadius;
+  final bool hoverPreview;
+  final SquigglyHoverScope hoverScope;
 
   ui.Image? _textAtlas;
   Size _atlasLogicalSize = Size.zero;
@@ -438,7 +486,8 @@ class _SquigglyTextPainter extends CustomPainter {
 
   void _rebuildAtlasIfNeeded(double maxWidth) {
     final wantsAtlas = animationStyle == SquigglyAnimationStyle.letters ||
-        animationStyle == SquigglyAnimationStyle.waveAndLetters;
+        animationStyle == SquigglyAnimationStyle.waveAndLetters ||
+        hoverBehavior != SquigglyHoverBehavior.none;
     if (!wantsAtlas) {
       _textAtlas?.dispose();
       _textAtlas = null;
@@ -520,17 +569,21 @@ class _SquigglyTextPainter extends CustomPainter {
     _rebuildAtlasIfNeeded(maxWidth);
   }
 
+  bool get _usesAtlas =>
+      animationStyle == SquigglyAnimationStyle.letters ||
+      animationStyle == SquigglyAnimationStyle.waveAndLetters ||
+      hoverBehavior != SquigglyHoverBehavior.none;
+
   @override
   void paint(Canvas canvas, Size size) {
     canvas.save();
     canvas.translate(_atlasPadding, _atlasPadding);
-    if (_animatesLetters ||
-        animationStyle == SquigglyAnimationStyle.letters ||
-        animationStyle == SquigglyAnimationStyle.waveAndLetters) {
+    if (_usesAtlas) {
       _paintAtlas(canvas);
     } else {
       textPainter.paint(canvas, Offset.zero);
     }
+
     final metrics = textPainter.computeLineMetrics();
     final paint = Paint()
       ..color = color
@@ -613,14 +666,29 @@ class _SquigglyTextPainter extends CustomPainter {
         (elapsedSeconds.value / frameDuration).floor().remainder(5);
     final logicalScale = (seedIndex.isOdd ? 8.0 : 6.0) * (fontSize / 100.0);
     final mapScale = logicalScale.clamp(1.5, _maximumDisplacement);
-    final pointer = pointerPosition.value;
+    Offset? pointer = pointerPosition.value;
+    if (pointer == null && hoverPreview) {
+      pointer = Offset(
+        _atlasLogicalSize.width / 2,
+        _atlasLogicalSize.height / 2,
+      );
+    }
     final pointerOffset =
         pointer == null ? null : pointer - Offset(_atlasPadding, _atlasPadding);
+    final scopeRect = pointer == null ? null : _scopeRect(pointerOffset!);
+    final scopedRect = scopeRect?.shift(Offset(_atlasPadding, _atlasPadding));
     fragmentShader
       ..setFloat(0, _atlasLogicalSize.width)
       ..setFloat(1, _atlasLogicalSize.height)
       ..setFloat(2, seedIndex.toDouble())
-      ..setFloat(3, _animatesLetters ? mapScale : 0)
+      ..setFloat(
+        3,
+        _animatesLetters ||
+                hoverBehavior == SquigglyHoverBehavior.trembleLetter ||
+                hoverBehavior == SquigglyHoverBehavior.trembleWord
+            ? mapScale
+            : 0,
+      )
       ..setFloat(4, 0.02)
       ..setFloat(5, 3)
       ..setFloat(6, pointerOffset?.dx ?? -10000)
@@ -634,12 +702,92 @@ class _SquigglyTextPainter extends CustomPainter {
                 ? -(0.8 + fluidity)
                 : 0,
       )
+      ..setFloat(10, _hoverShaderMode)
+      ..setFloat(11, _hoverScopeShaderValue)
+      ..setFloat(12, pointer == null ? 0 : 1)
+      ..setFloat(13, scopedRect?.left ?? -1)
+      ..setFloat(14, scopedRect?.top ?? -1)
+      ..setFloat(15, scopedRect?.right ?? -1)
+      ..setFloat(16, scopedRect?.bottom ?? -1)
       ..setImageSampler(0, atlas);
     paint.shader = fragmentShader;
     canvas.drawRect(
       Offset.zero & _atlasLogicalSize,
       paint,
     );
+  }
+
+  Rect? _scopeRect(Offset pointer) {
+    if (hoverScope == SquigglyHoverScope.all) {
+      return null;
+    }
+    final textPosition = textPainter.getPositionForOffset(pointer);
+    TextRange range;
+    if (hoverScope == SquigglyHoverScope.word) {
+      range = textPainter.getWordBoundary(textPosition);
+    } else {
+      var start = 0;
+      for (final grapheme in text.characters) {
+        final end = start + grapheme.length;
+        if (textPosition.offset >= start && textPosition.offset < end) {
+          range = TextRange(start: start, end: end);
+          final boxes = textPainter.getBoxesForSelection(
+            TextSelection(baseOffset: range.start, extentOffset: range.end),
+          );
+          return _unionBoxes(boxes);
+        }
+        start = end;
+      }
+      return null;
+    }
+    return _unionBoxes(
+      textPainter.getBoxesForSelection(
+        TextSelection(baseOffset: range.start, extentOffset: range.end),
+      ),
+    );
+  }
+
+  Rect? _unionBoxes(List<TextBox> boxes) {
+    if (boxes.isEmpty) {
+      return null;
+    }
+    var bounds = boxes.first.toRect();
+    for (final box in boxes.skip(1)) {
+      bounds = bounds.expandToInclude(box.toRect());
+    }
+    return bounds;
+  }
+
+  double get _hoverScopeShaderValue {
+    switch (hoverScope) {
+      case SquigglyHoverScope.all:
+        return 0;
+      case SquigglyHoverScope.word:
+        return 1;
+      case SquigglyHoverScope.letter:
+        return 2;
+    }
+  }
+
+  double get _hoverShaderMode {
+    switch (hoverBehavior) {
+      case SquigglyHoverBehavior.highlight:
+        return 1;
+      case SquigglyHoverBehavior.shrink:
+        return 2;
+      case SquigglyHoverBehavior.enlarge:
+        return 3;
+      case SquigglyHoverBehavior.trembleLetter:
+        return 4;
+      case SquigglyHoverBehavior.trembleWord:
+        return 5;
+      case SquigglyHoverBehavior.repel:
+        return 6;
+      case SquigglyHoverBehavior.none:
+      case SquigglyHoverBehavior.liftLetters:
+      case SquigglyHoverBehavior.magnetic:
+        return 0;
+    }
   }
 
   double _lineStart(LineMetrics line, double width) {

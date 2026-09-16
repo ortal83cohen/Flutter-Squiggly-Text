@@ -8,6 +8,13 @@ uniform float uOctaves;
 uniform vec2 uPointer;
 uniform float uPointerRadius;
 uniform float uPointerLift;
+uniform float uHoverMode;
+uniform float uHoverScope;
+uniform float uPointerActive;
+uniform float uScopeLeft;
+uniform float uScopeTop;
+uniform float uScopeRight;
+uniform float uScopeBottom;
 uniform sampler2D uText;
 out vec4 fragColor;
 
@@ -50,9 +57,66 @@ void main() {
     return;
   }
 
-  if (uScale == 0.0) {
+  if (uScale == 0.0 && uHoverMode == 0.0) {
     fragColor = texture(uText, uv);
     return;
+  }
+
+  float distanceToPointer = distance(fragment, uPointer);
+  float influence = 1.0 - smoothstep(0.0, uPointerRadius, distanceToPointer);
+  float scopeInfluence = 1.0;
+  if (uHoverScope == 0.0) {
+    influence = 1.0;
+  } else if (uHoverScope == 1.0) {
+    float horizontal = smoothstep(uScopeLeft - 4.0, uScopeLeft, fragment.x) *
+        (1.0 - smoothstep(uScopeRight, uScopeRight + 4.0, fragment.x));
+    float vertical = smoothstep(uScopeTop - 4.0, uScopeTop, fragment.y) *
+        (1.0 - smoothstep(uScopeBottom, uScopeBottom + 4.0, fragment.y));
+    scopeInfluence = horizontal * vertical;
+  } else if (uHoverScope == 2.0) {
+    float horizontal = smoothstep(uScopeLeft - 3.0, uScopeLeft, fragment.x) *
+        (1.0 - smoothstep(uScopeRight, uScopeRight + 3.0, fragment.x));
+    float vertical = smoothstep(uScopeTop - 3.0, uScopeTop, fragment.y) *
+        (1.0 - smoothstep(uScopeBottom, uScopeBottom + 3.0, fragment.y));
+    scopeInfluence = horizontal * vertical;
+  }
+  if (uPointerActive == 0.0) {
+    influence = 0.0;
+    scopeInfluence = 0.0;
+  }
+  influence *= scopeInfluence;
+  vec2 effectCenter = uPointer;
+  if (uHoverScope == 0.0) {
+    effectCenter = uSize * 0.5;
+  } else {
+    effectCenter = vec2(
+      (uScopeLeft + uScopeRight) * 0.5,
+      (uScopeTop + uScopeBottom) * 0.5
+    );
+  }
+  if (uHoverMode == 1.0) {
+    float scaleAmount = 0.12 * influence;
+    vec2 fromPointer = fragment - effectCenter;
+    vec2 scaled = effectCenter + fromPointer / (1.0 + scaleAmount);
+    fragment = scaled;
+    uv = fragment / uSize;
+  } else if (uHoverMode == 2.0 || uHoverMode == 3.0) {
+    float scaleAmount = (uHoverMode == 2.0 ? -0.32 : 0.5) * influence;
+    vec2 fromPointer = fragment - effectCenter;
+    vec2 scaled = effectCenter + fromPointer / (1.0 + scaleAmount);
+    fragment = scaled;
+    uv = fragment / uSize;
+  } else if (uHoverMode == 4.0 || uHoverMode == 5.0) {
+    float localInfluence = uHoverScope == 0.0
+        ? 1.0
+        : scopeInfluence;
+    localInfluence *= uPointerActive;
+    vec2 tremble = vec2(
+      sin(uSeed * 19.0 + fragment.y * 0.12),
+      cos(uSeed * 23.0 + fragment.x * 0.12)
+    ) * 2.4 * localInfluence;
+    fragment -= tremble;
+    uv = fragment / uSize;
   }
 
   vec2 noisePoint = fragment * uBaseFrequency;
@@ -61,10 +125,11 @@ void main() {
     turbulence(noisePoint + vec2(19.7, 47.3), uSeed + 13.0)
   );
   vec2 offset = uScale * (noiseRG - 0.5) * 2.0;
+  if (uHoverScope != 0.0 && uPointerActive > 0.0) {
+    offset *= scopeInfluence;
+  }
 
   if (uPointerLift != 0.0 && uPointerRadius > 0.0) {
-    float distanceToPointer = distance(fragment, uPointer);
-    float influence = 1.0 - smoothstep(0.0, uPointerRadius, distanceToPointer);
     if (uPointerLift > 0.0) {
       offset.y -= uPointerLift * influence * uScale;
     } else {
@@ -72,11 +137,12 @@ void main() {
       offset += towardPointer * (-uPointerLift) * influence * uScale;
     }
   }
-
-  vec2 sampleUv = uv + offset / uSize;
-  if (sampleUv.x < 0.0 || sampleUv.x > 1.0 || sampleUv.y < 0.0 || sampleUv.y > 1.0) {
-    fragColor = vec4(0.0);
-    return;
+  if (uHoverMode == 6.0 && uPointerRadius > 0.0) {
+    vec2 awayFromPointer = fragment - uPointer;
+    float lengthAway = max(length(awayFromPointer), 0.001);
+    offset += awayFromPointer / lengthAway * influence * 7.0;
   }
+
+  vec2 sampleUv = clamp(uv + offset / uSize, vec2(0.001), vec2(0.999));
   fragColor = texture(uText, sampleUv);
 }

@@ -2,6 +2,10 @@
 
 - Implemented hover and keyboard focus interaction for configured widgets,
 	including bounded highlight, letter-lift, and magnetic pointer responses.
+- Added hover modes for shrinking, enlarging, trembling a hovered letter or
+	word, and repelling nearby letters.
+- Added hover-only animation scopes for the full text, hovered word, or hovered
+	letter, with a centered preview mode for interactive examples.
 - Implemented `hoverOnly`, reduced-motion suppression, and best-effort app
 	lifecycle pausing without adding visibility dependencies.
 - Added validated animation style and interaction configuration.

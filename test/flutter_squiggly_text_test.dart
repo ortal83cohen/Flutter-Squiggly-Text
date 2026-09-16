@@ -26,6 +26,30 @@ void main() {
     expect(widget.hoverBehavior, SquigglyHoverBehavior.magnetic);
   });
 
+  test('supports the expanded hover behaviors', () {
+    for (final behavior in [
+      SquigglyHoverBehavior.shrink,
+      SquigglyHoverBehavior.enlarge,
+      SquigglyHoverBehavior.trembleLetter,
+      SquigglyHoverBehavior.trembleWord,
+      SquigglyHoverBehavior.repel,
+    ]) {
+      expect(
+        SquigglyText('Hello', hoverBehavior: behavior).hoverBehavior,
+        behavior,
+      );
+    }
+  });
+
+  test('supports hover animation scopes', () {
+    for (final scope in SquigglyHoverScope.values) {
+      expect(
+        SquigglyText('Hello', hoverScope: scope).hoverScope,
+        scope,
+      );
+    }
+  });
+
   test('validates animation parameters', () {
     expect(() => SquigglyText('Hello', speed: -1), throwsAssertionError);
     expect(() => SquigglyText('Hello', fluidity: 1.1), throwsAssertionError);
@@ -82,7 +106,8 @@ void main() {
     expect(find.bySemanticsLabel('Hello'), findsOneWidget);
   });
 
-  testWidgets('magnetic hover participates in pointer activation', (tester) async {
+  testWidgets('magnetic hover participates in pointer activation',
+      (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: SquigglyText(
@@ -106,6 +131,27 @@ void main() {
       PointerHoverEvent(position: center + const Offset(10, 0)),
     );
     await tester.pump(const Duration(milliseconds: 50));
+
+    expect(tester.binding.transientCallbackCount, greaterThan(0));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('tremble hover animates even when text animation is static',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: SquigglyText(
+          'Hello',
+          hoverBehavior: SquigglyHoverBehavior.trembleLetter,
+        ),
+      ),
+    );
+
+    final center = tester.getCenter(find.byType(SquigglyText));
+    tester.binding.handlePointerEvent(
+      PointerHoverEvent(position: center),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
 
     expect(tester.binding.transientCallbackCount, greaterThan(0));
     expect(tester.takeException(), isNull);
