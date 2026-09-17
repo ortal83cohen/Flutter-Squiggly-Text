@@ -77,6 +77,7 @@ class SquigglyText extends StatefulWidget {
     super.key,
     this.style,
     this.squiggleColor,
+    this.showSquiggle = false,
     this.amplitude = 2,
     this.wavelength = 8,
     this.strokeWidth = 1.5,
@@ -126,6 +127,9 @@ class SquigglyText extends StatefulWidget {
 
   /// The squiggle color. Defaults to [style]'s color or the current theme.
   final Color? squiggleColor;
+
+  /// Whether to paint the squiggly underline.
+  final bool showSquiggle;
 
   /// The height of the underline wave in logical pixels.
   ///
@@ -381,6 +385,7 @@ class _SquigglyTextState extends State<SquigglyText>
       text: widget.text,
       style: effectiveStyle,
       color: effectiveColor,
+      showSquiggle: widget.showSquiggle,
       amplitude: widget.amplitude,
       wavelength: widget.wavelength,
       strokeWidth: widget.strokeWidth,
@@ -448,6 +453,7 @@ class _SquigglyTextPainter extends CustomPainter {
     required this.text,
     required this.style,
     required this.color,
+    required this.showSquiggle,
     required this.amplitude,
     required this.wavelength,
     required this.strokeWidth,
@@ -492,6 +498,7 @@ class _SquigglyTextPainter extends CustomPainter {
   final String text;
   final TextStyle style;
   final Color color;
+  final bool showSquiggle;
   final double amplitude;
   final double wavelength;
   final double strokeWidth;
@@ -605,7 +612,9 @@ class _SquigglyTextPainter extends CustomPainter {
   Offset get _atlasOrigin => Offset(horizontalPadding, _verticalPadding);
 
   double get height =>
-      textPainter.height + gap + amplitude + strokeWidth + _verticalPadding * 2;
+      textPainter.height +
+      (showSquiggle ? gap + amplitude + strokeWidth : 0) +
+      _verticalPadding * 2;
 
   void layout({required double maxWidth}) {
     final textWidth = maxWidth.isFinite && _usesAtlas
@@ -629,6 +638,10 @@ class _SquigglyTextPainter extends CustomPainter {
       _paintAtlas(canvas);
     } else {
       textPainter.paint(canvas, _atlasOrigin);
+    }
+
+    if (!showSquiggle) {
+      return;
     }
 
     canvas.save();

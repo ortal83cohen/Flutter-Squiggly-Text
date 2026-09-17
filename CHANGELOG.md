@@ -10,6 +10,8 @@
 
 ## Unreleased
 
+- Changed the squiggly underline to be opt-in with `showSquiggle: true`;
+	text is now rendered without an underline by default.
 - Restored the example animation GIF and related captured media after they were
   accidentally emptied in a previous commit.
 - Documented that agents must keep `CHANGELOG.md` updated for behavior,

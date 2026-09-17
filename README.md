@@ -44,6 +44,7 @@ import 'package:flutter_squiggly_text/flutter_squiggly_text.dart';
 const SquigglyText(
   'Hello Flutter',
   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+  showSquiggle: true,
   squiggleColor: Colors.deepOrange,
   amplitude: 3,
   wavelength: 10,
@@ -52,6 +53,9 @@ const SquigglyText(
 
 `SquigglyText` supports regular Flutter text styling, wrapping, alignment,
 maximum lines, and custom accessibility labels.
+
+The squiggly underline is hidden by default. Set `showSquiggle: true` to show
+it.
 
 Set `hoverPreview: true` when a showcase needs to display a pointer effect
 without waiting for pointer input. The effect is centered on the text until
@@ -113,7 +117,7 @@ The main public API is the `SquigglyText` widget:
 
 | Option | Purpose |
 | --- | --- |
-| `style` and `squiggleColor` | Configure text and underline appearance. |
+| `style`, `showSquiggle`, and `squiggleColor` | Configure text and underline appearance. |
 | `amplitude`, `wavelength`, `strokeWidth`, and `gap` | Configure underline geometry. |
 | `animationStyle`, `speed`, `fluidity`, and `stagger` | Configure animation. `speed` controls wave cycles per second and the letter displacement cadence. |
 | `hoverBehavior`, `hoverRadius`, `hoverOnly`, `hoverScope`, and `hoverPreview` | Configure pointer, focus, range, and preview interaction. |
