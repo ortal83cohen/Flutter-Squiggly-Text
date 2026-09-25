@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.1.8 - 2026-09-25
+
 - Pointed the README example GIF at an absolute GitHub URL so pub.dev can show
   it before package analysis resolves relative image paths.
 
