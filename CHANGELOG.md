@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Pointed the README example GIF at an absolute GitHub URL so pub.dev can show
+  it before package analysis resolves relative image paths.
+
 ## 0.1.7 - 2026-09-25
 
 - Added an optional `squiggleGradient` for the underline stroke. A null gradient

@@ -11,7 +11,7 @@
 Add a customizable squiggly underline to Flutter text, with optional animation
 and pointer interaction.
 
-![SquigglyText example](screenshots/example.gif)
+![SquigglyText example](https://raw.githubusercontent.com/ortal83cohen/Flutter-Squiggly-Text/main/screenshots/example.gif)
 
 Please [let us know about any problems](https://github.com/ortal83cohen/flutter_webmcp/issues/new/choose)
 you encounter; we would be happy to improve the library together with the
