@@ -1,18 +1,9 @@
 # Changelog
 
-## 0.1.6 - 2026-09-17
-
-- Automated patch release from main.
-
-## 0.1.5 - 2026-09-16
-
-- Automated patch release from main.
-
-## 0.1.4 - 2026-09-16
-
-- Automated patch release from main.
-
 ## Unreleased
+
+## 0.1.7 - 2026-09-25
+
 - Added an optional `squiggleGradient` for the underline stroke. A null gradient
   keeps the solid `squiggleColor`. The gradient follows each laid-out line and
   does not recolor the glyphs.
@@ -46,6 +37,18 @@
 	default.
 - Fixed `softWrap: false` to lay out text with unlimited width.
 - Added focused regression coverage for animated hover pointer activation.
+
+## 0.1.6 - 2026-09-17
+
+- Automated patch release from main.
+
+## 0.1.5 - 2026-09-16
+
+- Automated patch release from main.
+
+## 0.1.4 - 2026-09-16
+
+- Automated patch release from main.
 
 ## 0.1.0
 
