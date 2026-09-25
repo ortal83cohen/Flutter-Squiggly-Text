@@ -104,6 +104,7 @@ class _ExamplePageState extends State<ExamplePage> {
                       ),
                       child: SquigglyText(
                         _textController.text,
+                        showSquiggle: true,
                         style: previewStyle.copyWith(
                           color: theme.colorScheme.onSurface,
                         ),
@@ -296,6 +297,7 @@ class _ExamplePageState extends State<ExamplePage> {
   }) =>
       SquigglyText(
         text,
+        showSquiggle: true,
         style: TextStyle(
           fontFamily: 'AmaticSC',
           fontWeight: FontWeight.w700,

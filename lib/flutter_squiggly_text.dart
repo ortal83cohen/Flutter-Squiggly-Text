@@ -166,6 +166,7 @@ class SquigglyText extends StatefulWidget {
     super.key,
     this.style,
     Color? squiggleColor,
+    this.showSquiggle = false,
     Gradient? squiggleGradient,
     double? amplitude,
     double? wavelength,
@@ -242,6 +243,11 @@ class SquigglyText extends StatefulWidget {
 
   /// The explicit squiggle color, before [squiggleStyle] is applied.
   final Color? _squiggleColor;
+
+  /// Whether to paint the squiggly underline.
+  ///
+  /// Defaults to false, so text renders without an underline until this is set.
+  final bool showSquiggle;
 
   /// The explicit squiggle gradient, before [squiggleStyle] is applied.
   final Gradient? _squiggleGradient;
@@ -562,6 +568,7 @@ class _SquigglyTextState extends State<SquigglyText>
       text: widget.text,
       style: effectiveStyle,
       color: effectiveColor,
+      showSquiggle: widget.showSquiggle,
       gradient: widget.squiggleGradient,
       amplitude: widget.amplitude,
       wavelength: widget.wavelength,
@@ -631,6 +638,7 @@ class _SquigglyTextPainter extends CustomPainter {
     required this.text,
     required this.style,
     required this.color,
+    required this.showSquiggle,
     required this.gradient,
     required this.amplitude,
     required this.wavelength,
@@ -677,6 +685,7 @@ class _SquigglyTextPainter extends CustomPainter {
   final String text;
   final TextStyle style;
   final Color color;
+  final bool showSquiggle;
   final Gradient? gradient;
   final double amplitude;
   final double wavelength;
@@ -792,7 +801,9 @@ class _SquigglyTextPainter extends CustomPainter {
   Offset get _atlasOrigin => Offset(horizontalPadding, _verticalPadding);
 
   double get height =>
-      textPainter.height + gap + amplitude + strokeWidth + _verticalPadding * 2;
+      textPainter.height +
+      (showSquiggle ? gap + amplitude + strokeWidth : 0) +
+      _verticalPadding * 2;
 
   void layout({required double maxWidth}) {
     final textWidth = maxWidth.isFinite && _usesAtlas
@@ -816,6 +827,10 @@ class _SquigglyTextPainter extends CustomPainter {
       _paintAtlas(canvas);
     } else {
       textPainter.paint(canvas, _atlasOrigin);
+    }
+
+    if (!showSquiggle) {
+      return;
     }
 
     canvas.save();
@@ -1056,6 +1071,7 @@ class _SquigglyTextPainter extends CustomPainter {
       textPainter.strutStyle != oldPainter.textPainter.strutStyle ||
       style != oldPainter.style ||
       color != oldPainter.color ||
+      showSquiggle != oldPainter.showSquiggle ||
       amplitude != oldPainter.amplitude ||
       wavelength != oldPainter.wavelength ||
       strokeWidth != oldPainter.strokeWidth ||

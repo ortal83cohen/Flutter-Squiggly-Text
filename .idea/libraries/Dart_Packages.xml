@@ -47,7 +47,6 @@
         <entry key="flutter">
           <value>
             <list>
-              <option value="$USER_HOME$/fvm/versions/3.47.0/packages/flutter/lib" />
               <option value="$USER_HOME$/fvm/versions/3.47.3/packages/flutter/lib" />
             </list>
           </value>
@@ -62,14 +61,13 @@
         <entry key="flutter_localizations">
           <value>
             <list>
-              <option value="$USER_HOME$/fvm/versions/3.47.0/packages/flutter_localizations/lib" />
+              <option value="$USER_HOME$/fvm/versions/3.47.3/packages/flutter_localizations/lib" />
             </list>
           </value>
         </entry>
         <entry key="flutter_test">
           <value>
             <list>
-              <option value="$USER_HOME$/fvm/versions/3.47.0/packages/flutter_test/lib" />
               <option value="$USER_HOME$/fvm/versions/3.47.3/packages/flutter_test/lib" />
             </list>
           </value>
@@ -140,7 +138,6 @@
         <entry key="sky_engine">
           <value>
             <list>
-              <option value="$USER_HOME$/fvm/versions/3.47.0/bin/cache/pkg/sky_engine/lib" />
               <option value="$USER_HOME$/fvm/versions/3.47.3/bin/cache/pkg/sky_engine/lib" />
             </list>
           </value>
@@ -228,12 +225,9 @@
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/test_api-0.7.12/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/vector_math-2.4.3/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/vm_service-15.3.0/lib" />
-      <root url="file://$USER_HOME$/fvm/versions/3.47.0/bin/cache/pkg/sky_engine/lib" />
-      <root url="file://$USER_HOME$/fvm/versions/3.47.0/packages/flutter/lib" />
-      <root url="file://$USER_HOME$/fvm/versions/3.47.0/packages/flutter_localizations/lib" />
-      <root url="file://$USER_HOME$/fvm/versions/3.47.0/packages/flutter_test/lib" />
       <root url="file://$USER_HOME$/fvm/versions/3.47.3/bin/cache/pkg/sky_engine/lib" />
       <root url="file://$USER_HOME$/fvm/versions/3.47.3/packages/flutter/lib" />
+      <root url="file://$USER_HOME$/fvm/versions/3.47.3/packages/flutter_localizations/lib" />
       <root url="file://$USER_HOME$/fvm/versions/3.47.3/packages/flutter_test/lib" />
     </CLASSES>
     <JAVADOC />

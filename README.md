@@ -52,6 +52,7 @@ import 'package:flutter_squiggly_text/flutter_squiggly_text.dart';
 const SquigglyText(
   'Hello Flutter',
   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+  showSquiggle: true,
   squiggleColor: Colors.deepOrange,
   amplitude: 3,
   wavelength: 10,
@@ -60,6 +61,9 @@ const SquigglyText(
 
 `SquigglyText` supports regular Flutter text styling, wrapping, alignment,
 maximum lines, and custom accessibility labels.
+
+The squiggly underline is hidden by default. Set `showSquiggle: true` to show
+it.
 
 Set `hoverPreview: true` when a showcase needs to display a pointer effect
 without waiting for pointer input. The effect is centered on the text until
@@ -76,6 +80,7 @@ Animation is static by default. To enable the initial animated underline wave:
 ```dart
 const SquigglyText(
   'Hello Flutter',
+  showSquiggle: true,
   animationStyle: SquigglyAnimationStyle.wave,
   speed: 1,
 )
@@ -99,6 +104,7 @@ Pointer interaction can be enabled with `hoverBehavior` and `hoverRadius`:
 ```dart
 const SquigglyText(
   'Hover me',
+  showSquiggle: true,
   animationStyle: SquigglyAnimationStyle.waveAndLetters,
   hoverBehavior: SquigglyHoverBehavior.liftLetters,
   hoverRadius: 56,
@@ -126,6 +132,7 @@ null gradient keeps the solid `squiggleColor`. Glyph color stays on `style`.
 ```dart
 const SquigglyText(
   'Hello Flutter',
+  showSquiggle: true,
   animationStyle: SquigglyAnimationStyle.wave,
   squiggleGradient: LinearGradient(colors: [Colors.red, Colors.orange]),
   phase: 0.25,
@@ -139,6 +146,7 @@ with amplitude `0` and speed `1`, and draws no underline.
 ```dart
 const SquigglyText(
   'teh',
+  showSquiggle: true,
   squiggleStyle: SquigglyTextStyle.spellcheck,
 )
 
@@ -160,7 +168,7 @@ The main public API is the `SquigglyText` widget:
 
 | Option | Purpose |
 | --- | --- |
-| `style` and `squiggleColor` | Configure text and underline appearance. |
+| `style`, `showSquiggle`, and `squiggleColor` | Configure text and underline appearance. |
 | `squiggleGradient` | Paints the underline stroke with a gradient along each laid-out line. Null keeps the solid `squiggleColor`. |
 | `amplitude`, `wavelength`, `strokeWidth`, and `gap` | Configure underline geometry. |
 | `animationStyle`, `speed`, `phase`, `fluidity`, and `stagger` | Configure animation. `speed` controls wave cycles per second and the letter displacement cadence. `phase` is an offset in turns and defaults to 0. `speed: 0` leaves `phase` unused. |

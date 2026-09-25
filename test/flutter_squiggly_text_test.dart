@@ -9,12 +9,19 @@ void main() {
     const widget = SquigglyText('Hello');
 
     expect(widget.animationStyle, SquigglyAnimationStyle.none);
+    expect(widget.showSquiggle, isFalse);
     expect(widget.speed, 1);
     expect(widget.fluidity, 0.5);
     expect(widget.stagger, 0.2);
     expect(widget.hoverBehavior, SquigglyHoverBehavior.none);
     expect(widget.pauseWhenNotVisible, isTrue);
     expect(widget.respectReducedMotion, isTrue);
+  });
+
+  test('enables the squiggle explicitly', () {
+    const widget = SquigglyText('Hello', showSquiggle: true);
+
+    expect(widget.showSquiggle, isTrue);
   });
 
   test('magnetic hover behavior stays enabled for pointer interaction', () {

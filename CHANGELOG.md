@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.6 - 2026-09-17
+
+- Automated patch release from main.
+
 ## 0.1.5 - 2026-09-16
 
 - Automated patch release from main.
@@ -9,7 +13,6 @@
 - Automated patch release from main.
 
 ## Unreleased
-
 - Added an optional `squiggleGradient` for the underline stroke. A null gradient
   keeps the solid `squiggleColor`. The gradient follows each laid-out line and
   does not recolor the glyphs.
@@ -24,6 +27,8 @@
   including centered, end-aligned, and right-to-left text.
 - Promoted notes under `## Unreleased` into the version section created by the
   patch release workflow.
+- Changed the squiggly underline to be opt-in with `showSquiggle: true`;
+  text is now rendered without an underline by default.
 - Restored the example animation GIF and related captured media after they were
   accidentally emptied in a previous commit.
 - Documented that agents must keep `CHANGELOG.md` updated for behavior,
