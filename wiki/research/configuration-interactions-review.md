@@ -14,7 +14,7 @@ This review maps the public animation and pointer settings to the current implem
 
 `speed` gates the ticker and controls wave phase and atlas seed cadence. `hoverOnly` gates the ticker until pointer, focus, or preview is active. `hoverPreview` supplies a synthetic center pointer when no real pointer exists. `respectReducedMotion` disables the ticker and passes `hoverBehavior.none` to the painter.
 
-This is a workable additive API, but the range control must be described as a pointer range: `hoverScope` scopes pointer effects and does not limit autonomous `animationStyle.letters` or `wave` motion. The example now separates automatic animation selection from pointer/focus activation.
+This is a workable additive API. `hoverScope` does not change the geometric underline. While a pointer, focus, or preview target is active and the scope is a word or a letter, the shader multiplies the letter-displacement offset by that region's influence, so autonomous letter tremor outside the region stops. The example separates automatic animation from pointer and focus activation.
 
 ## Combination findings
 
@@ -48,9 +48,9 @@ Reduced motion suppresses the ticker and maps the painter’s pointer behavior t
 
 ### `fluidity` and `stagger`
 
-`fluidity` is used as the strength adjustment for lift and magnetic pointer effects. It is not a general smoothing or spring parameter. `stagger` remains a legacy public field that is validated and carried through the painter but is not currently consumed by rendering. Its public description should remain conservative until per-grapheme animation is implemented.
+`fluidity` is the strength adjustment for lift and magnetic pointer effects. It is not a general smoothing or spring parameter. `stagger` is validated and carried through the painter, and rendering does not read it. Letter motion is one shared displacement field, so per-grapheme phase stagger is not part of the current model.
 
-Retain both fields for compatibility. Treat `stagger` as a follow-up item for a grapheme-aware transform pipeline rather than adding more configuration now.
+Retain both fields for compatibility. Do not describe `stagger` as an active phase offset.
 
 ## Recommended minimal model
 
@@ -75,9 +75,9 @@ animationActive = automatic motion or time-based hover effect
 
 The painter now includes the scope and preview state in repaint decisions, so changing either setting while a pointer/preview is present updates the visual immediately.
 
-## Suggested focused tests
+## Focused tests
 
-Add tests at the painter/widget boundary for:
+`test/configuration_interactions_test.dart` and `test/flutter_squiggly_text_test.dart` cover the cases below:
 
 * `trembleLetter` and `trembleWord` selecting their documented effective scopes, regardless of the dropdown scope.
 * Focused pointer behavior producing the same centered target as preview.

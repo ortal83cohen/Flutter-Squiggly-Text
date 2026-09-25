@@ -9,6 +9,30 @@
       <excludeFolder url="file://$MODULE_DIR$/example/.dart_tool" />
       <excludeFolder url="file://$MODULE_DIR$/example/.pub" />
       <excludeFolder url="file://$MODULE_DIR$/example/build" />
+      <excludeFolder url="file://$MODULE_DIR$/tools/fixtures/bump-patch-version/reject-changelog-ahead/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/tools/fixtures/bump-patch-version/reject-changelog-ahead/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/tools/fixtures/bump-patch-version/reject-changelog-ahead/build" />
+      <excludeFolder url="file://$MODULE_DIR$/tools/fixtures/bump-patch-version/reject-missing-changelog/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/tools/fixtures/bump-patch-version/reject-missing-changelog/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/tools/fixtures/bump-patch-version/reject-missing-changelog/build" />
+      <excludeFolder url="file://$MODULE_DIR$/tools/fixtures/bump-patch-version/reject-no-changelog-title/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/tools/fixtures/bump-patch-version/reject-no-changelog-title/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/tools/fixtures/bump-patch-version/reject-no-changelog-title/build" />
+      <excludeFolder url="file://$MODULE_DIR$/tools/fixtures/bump-patch-version/reject-prerelease/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/tools/fixtures/bump-patch-version/reject-prerelease/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/tools/fixtures/bump-patch-version/reject-prerelease/build" />
+      <excludeFolder url="file://$MODULE_DIR$/tools/fixtures/bump-patch-version/reject-two-components/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/tools/fixtures/bump-patch-version/reject-two-components/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/tools/fixtures/bump-patch-version/reject-two-components/build" />
+      <excludeFolder url="file://$MODULE_DIR$/tools/fixtures/bump-patch-version/valid-leading-blank/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/tools/fixtures/bump-patch-version/valid-leading-blank/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/tools/fixtures/bump-patch-version/valid-leading-blank/build" />
+      <excludeFolder url="file://$MODULE_DIR$/tools/fixtures/bump-patch-version/valid-minor-untouched/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/tools/fixtures/bump-patch-version/valid-minor-untouched/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/tools/fixtures/bump-patch-version/valid-minor-untouched/build" />
+      <excludeFolder url="file://$MODULE_DIR$/tools/fixtures/bump-patch-version/valid-patch/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/tools/fixtures/bump-patch-version/valid-patch/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/tools/fixtures/bump-patch-version/valid-patch/build" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

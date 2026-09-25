@@ -2,9 +2,20 @@
 
 ## Status
 
-This plan supersedes [SquigglyText Visual Course Correction](squiggly-text-visual-course-correction.md) for letter animation. That document correctly identified that the CodePen target is glyph motion, not a spellcheck underline. It then prescribed a larger rigid-body sine bounce. That model cannot produce the reference look.
+This plan supersedes [SquigglyText Visual Course Correction](squiggly-text-visual-course-correction.md) for letter animation. The displacement model below is what the widget uses now.
 
-Do not implement more per-grapheme translation, rotation, or stagger tuning until the displacement model below is in place.
+Shipped in `lib/flutter_squiggly_text.dart` and `shaders/squiggly_turbulence.frag`:
+
+- A `Ticker` stores monotonic elapsed seconds. Wave phase is `2 * pi * speed * t`.
+- Letter modes snapshot the full shaped run and displace it with the fragment shader.
+- Seed cadence follows `frameDuration = 0.068 / speed`, with five seeds and alternating scales scaled by font size.
+- Pointer, scope, lift, and magnetic values are shader uniforms.
+- A missing shader paints undisplaced text. There is no CPU jitter fallback.
+- `stagger` is still unused. `amplitude` is underline height only.
+
+Not shipped as separate files: `lib/src/squiggly_time.dart`, `lib/src/squiggly_displacement.dart`, `lib/src/glyph_atlas.dart`, `test/displacement_loop_test.dart`, and `test/glyph_atlas_test.dart`.
+
+Section 2 below describes the rigid-body path this plan replaced. `_paintLetters`, `_glyphMotion`, and the one-second `AnimationController` are not in the code.
 
 ## Goal
 

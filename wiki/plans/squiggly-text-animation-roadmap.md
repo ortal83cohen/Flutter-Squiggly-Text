@@ -1,5 +1,9 @@
 # SquigglyText Animation Roadmap
 
+## Status
+
+Sections 3 onward are the original proposal. They are not a description of the shipped widget. For the code as it is now, use [SquigglyText Implementation Summary](../summaries/squiggly-text-implementation-summary.md).
+
 ## 1. Goal
 
 Evolve `SquigglyText` from a static squiggly underline into an optional, web-inspired text animation widget while preserving the current static behavior, Flutter text layout features, and accessibility contract.
@@ -16,22 +20,25 @@ The feature should support:
 
 Static rendering remains the default so existing users do not receive an unexpected animation or performance cost.
 
-## 2. Current Status (2026-09-16)
+## 2. Shipped status
 
-The implementation has reached the core product milestone and now includes:
+The widget now does the following. This replaces the 2026-09-16 status note, which described grapheme splitting and only three hover modes.
 
-- default static rendering with additive animation opt-in
-- wave underline animation and wave + letters combination
-- safe grapheme-aware letter handling with graceful fallback for ambiguous shapes
-- hover behaviors for `highlight`, `liftLetters`, and `magnetic`
-- keyboard focus participation when interaction is configured
-- reduced motion respect and lifecycle-aware pause logic
+- Static rendering stays the default.
+- The underline wave uses monotonic elapsed time.
+- Letter modes displace one full-text atlas with a fragment shader. They do not split graphemes or fall back by script.
+- Hover behaviors also include shrink, enlarge, tremble-letter, tremble-word, and repel, with `hoverScope` and `hoverPreview`.
+- `trembleLetter` and `trembleWord` ignore the caller's scope and use a letter or word region.
+- Keyboard focus and `hoverPreview` share a centered pointer target.
+- Reduced motion stops the ticker and clears pointer motion.
+- `pauseWhenNotVisible` follows app lifecycle only, not viewport visibility.
+- `stagger` has no visual effect. `fluidity` is lift and magnetic strength, not a spring.
 
-The remaining work is primarily release polish and advanced accessibility refinements rather than core animation gaps. This status reflects the current codebase as of 2026-09-16 and should be treated as a live implementation record, not as a backlog for missing essential features.
+## 3. Original baseline
 
-## 3. Current Baseline
+This section describes the package before animation work. It is not the current widget.
 
-The current implementation is in `lib/flutter_squiggly_text.dart`:
+The implementation at that time was in `lib/flutter_squiggly_text.dart`:
 
 - `SquigglyText` is a `StatelessWidget`.
 - Text is laid out by one `TextPainter`.
@@ -40,7 +47,7 @@ The current implementation is in `lib/flutter_squiggly_text.dart`:
 - Wrapping, alignment, directionality, locale, maximum lines, strut style, and semantics are already part of the public surface.
 - There is no animation clock, hover state, per-letter layout cache, or external animation control.
 
-The current tests cover semantics and multiline rendering in `test/flutter_squiggly_text_test.dart`.
+At that time the tests covered semantics and multiline rendering in `test/flutter_squiggly_text_test.dart`.
 
 ## 4. Product Principles
 
@@ -199,13 +206,15 @@ Hover-only behavior should not be the only way to discover the effect. Add a foc
 
 ### Status snapshot
 
-- Phase 0: Completed in practice through the static baseline, validation, and soft-wrap fix.
-- Phase 1: Completed for the animated underline path.
-- Phase 2: Completed for the grapheme-safe layout and fallback approach.
-- Phase 3: Completed for the default letter animation behavior and staggered motion.
-- Phase 4: Completed for highlight/lift/magnetic hover behavior and focus participation.
-- Phase 5: Partially complete; accessibility lifecycle polishing and viewport-visibility refinements are follow-up work.
-- Phase 6: In progress; docs, examples, and release notes are still being finalized.
+These phases are the original plan. Later work replaced per-grapheme motion with shader displacement. Do not read a "completed" phase as the current rendering model.
+
+- Phase 0: The static baseline and `softWrap: false` fix are in the widget.
+- Phase 1: The underline wave is in the widget, driven by a `Ticker` and elapsed seconds.
+- Phase 2: Per-grapheme caches and shaping fallback were not shipped. Letter modes snapshot the full shaped run.
+- Phase 3: Letter motion is shader displacement. `stagger` is unused, and `fluidity` is not a smoothing spring.
+- Phase 4: Hover includes the original three modes plus shrink, enlarge, tremble, and repel.
+- Phase 5: Reduced motion and app-lifecycle pausing are in the widget. Viewport visibility is still open.
+- Phase 6: The example app and changelog exist. Benchmarks called for below are not in the test suite.
 
 
 ### Phase 0: Baseline and contracts

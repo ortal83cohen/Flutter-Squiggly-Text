@@ -7,7 +7,10 @@ This repository uses the same two-workflow release model as `flutter_webmcp`.
 1. A push to `main` starts `.github/workflows/release.yml`.
 2. After `tools/check.sh` passes, `tools/bump_patch_version.sh` increments the
    patch version in `pubspec.yaml` and inserts a dated section in
-   `CHANGELOG.md`.
+   `CHANGELOG.md`. Notes under `## Unreleased` become that section. The
+   placeholder "Automated patch release from main." is used only when
+   `## Unreleased` has no notes. An empty `## Unreleased` section is left
+   for the next change.
 3. The job commits those two files, then pushes the commit and an annotated
    tag named `v{{version}}`.
 4. The tag starts `.github/workflows/publish.yml`, which publishes to

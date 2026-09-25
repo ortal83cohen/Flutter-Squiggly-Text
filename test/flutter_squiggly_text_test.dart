@@ -61,6 +61,92 @@ void main() {
         throwsAssertionError);
   });
 
+  test('spellcheck preset resolves a red static underline', () {
+    const widget = SquigglyText(
+      'x',
+      squiggleStyle: SquigglyTextStyle.spellcheck,
+    );
+
+    expect(widget.squiggleColor, Colors.red);
+    expect(widget.animationStyle, SquigglyAnimationStyle.none);
+    expect(widget.amplitude, 2);
+    expect(widget.wavelength, 8);
+    expect(widget.strokeWidth, 1.5);
+    expect(widget.gap, 2);
+  });
+
+  test('handwriting preset resolves letter motion without an underline', () {
+    const widget = SquigglyText(
+      'x',
+      squiggleStyle: SquigglyTextStyle.handwriting,
+    );
+
+    expect(widget.animationStyle, SquigglyAnimationStyle.letters);
+    expect(widget.amplitude, 0);
+    expect(widget.speed, 1);
+  });
+
+  test('explicit amplitude overrides the handwriting preset', () {
+    const widget = SquigglyText(
+      'x',
+      amplitude: 4,
+      squiggleStyle: SquigglyTextStyle.handwriting,
+    );
+
+    expect(widget.amplitude, 4);
+    expect(widget.animationStyle, SquigglyAnimationStyle.letters);
+  });
+
+  test('explicit squiggle color overrides the spellcheck preset', () {
+    const widget = SquigglyText(
+      'x',
+      squiggleColor: Colors.blue,
+      squiggleStyle: SquigglyTextStyle.spellcheck,
+    );
+
+    expect(widget.squiggleColor, Colors.blue);
+    expect(widget.animationStyle, SquigglyAnimationStyle.none);
+  });
+
+  test('phase defaults to zero and must be finite', () {
+    expect(const SquigglyText('x').phase, 0);
+    expect(const SquigglyText('x', phase: 0.25).phase, 0.25);
+    expect(const SquigglyText('x', phase: -1.5).phase, -1.5);
+    expect(() => SquigglyText('x', phase: double.nan), throwsAssertionError);
+    expect(
+      () => SquigglyText('x', phase: double.infinity),
+      throwsAssertionError,
+    );
+    expect(
+      () => SquigglyText('x', phase: double.negativeInfinity),
+      throwsAssertionError,
+    );
+  });
+
+  testWidgets('a stroke gradient builds, including with a wave',
+      (tester) async {
+    const gradient = LinearGradient(colors: [Colors.red, Colors.orange]);
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: SquigglyText('Hello', squiggleGradient: gradient),
+      ),
+    );
+    expect(find.byType(SquigglyText), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: SquigglyText(
+          'Hello',
+          squiggleGradient: gradient,
+          animationStyle: SquigglyAnimationStyle.wave,
+        ),
+      ),
+    );
+    expect(find.byType(SquigglyText), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('renders text with its configured semantics', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(

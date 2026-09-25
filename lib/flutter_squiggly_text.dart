@@ -69,18 +69,108 @@ enum SquigglyHoverScope {
   letter,
 }
 
+/// Optional underline and animation values shared by [SquigglyText].
+///
+/// Every field is nullable. A null field leaves that setting to the widget
+/// constructor or the library default. [SquigglyText] resolves each styled
+/// field as the explicit constructor argument, then the non-null field here,
+/// then the library default.
+class SquigglyTextStyle {
+  /// Creates a style whose set fields override [SquigglyText] defaults.
+  const SquigglyTextStyle({
+    this.squiggleColor,
+    this.squiggleGradient,
+    this.amplitude,
+    this.wavelength,
+    this.strokeWidth,
+    this.gap,
+    this.animationStyle,
+    this.speed,
+    this.phase,
+  })  : assert(amplitude == null || amplitude >= 0),
+        assert(
+          amplitude == null ||
+              (amplitude == amplitude && amplitude != double.infinity),
+        ),
+        assert(wavelength == null || wavelength > 0),
+        assert(
+          wavelength == null ||
+              (wavelength == wavelength && wavelength != double.infinity),
+        ),
+        assert(strokeWidth == null || strokeWidth > 0),
+        assert(
+          strokeWidth == null ||
+              (strokeWidth == strokeWidth && strokeWidth != double.infinity),
+        ),
+        assert(gap == null || gap >= 0),
+        assert(gap == null || (gap == gap && gap != double.infinity)),
+        assert(speed == null || speed >= 0),
+        assert(speed == null || (speed == speed && speed != double.infinity)),
+        assert(
+          phase == null ||
+              (phase == phase &&
+                  phase != double.infinity &&
+                  phase != double.negativeInfinity),
+        );
+
+  /// A red, static underline using the library geometry defaults.
+  static const SquigglyTextStyle spellcheck = SquigglyTextStyle(
+    squiggleColor: Colors.red,
+    animationStyle: SquigglyAnimationStyle.none,
+  );
+
+  /// Letter displacement with no underline wave.
+  static const SquigglyTextStyle handwriting = SquigglyTextStyle(
+    animationStyle: SquigglyAnimationStyle.letters,
+    amplitude: 0,
+    speed: 1,
+  );
+
+  /// The squiggle color. Null leaves color to the widget or theme.
+  final Color? squiggleColor;
+
+  /// The squiggle stroke gradient. Null keeps a solid color.
+  final Gradient? squiggleGradient;
+
+  /// The underline wave height in logical pixels.
+  final double? amplitude;
+
+  /// The distance between matching points in consecutive waves.
+  final double? wavelength;
+
+  /// The width of the squiggle stroke.
+  final double? strokeWidth;
+
+  /// The distance between the text baseline and the squiggle.
+  final double? gap;
+
+  /// The animation style.
+  final SquigglyAnimationStyle? animationStyle;
+
+  /// The number of wave cycles per second.
+  final double? speed;
+
+  /// The animation phase offset in turns.
+  final double? phase;
+}
+
 /// Displays [text] with a customizable squiggly underline.
 class SquigglyText extends StatefulWidget {
   /// Creates a squiggly text widget.
+  ///
+  /// Styled fields resolve in this order: the explicit constructor argument,
+  /// then the matching non-null [squiggleStyle] field, then the library
+  /// default. A null argument is not explicit.
   const SquigglyText(
     this.text, {
     super.key,
     this.style,
-    this.squiggleColor,
-    this.amplitude = 2,
-    this.wavelength = 8,
-    this.strokeWidth = 1.5,
-    this.gap = 2,
+    Color? squiggleColor,
+    Gradient? squiggleGradient,
+    double? amplitude,
+    double? wavelength,
+    double? strokeWidth,
+    double? gap,
     this.textAlign = TextAlign.start,
     this.textDirection,
     this.locale,
@@ -89,8 +179,9 @@ class SquigglyText extends StatefulWidget {
     this.maxLines,
     this.strutStyle,
     this.semanticsLabel,
-    this.animationStyle = SquigglyAnimationStyle.none,
-    this.speed = 1,
+    SquigglyAnimationStyle? animationStyle,
+    double? speed,
+    double? phase,
     this.fluidity = 0.5,
     this.stagger = 0.2,
     this.hoverBehavior = SquigglyHoverBehavior.none,
@@ -100,17 +191,42 @@ class SquigglyText extends StatefulWidget {
     this.hoverOnly = false,
     this.pauseWhenNotVisible = true,
     this.respectReducedMotion = true,
-  })  : assert(amplitude >= 0),
-        assert(amplitude == amplitude && amplitude != double.infinity),
-        assert(wavelength > 0),
-        assert(wavelength == wavelength && wavelength != double.infinity),
-        assert(strokeWidth > 0),
-        assert(strokeWidth == strokeWidth && strokeWidth != double.infinity),
-        assert(gap >= 0),
-        assert(gap == gap && gap != double.infinity),
+    this.squiggleStyle,
+  })  : _squiggleColor = squiggleColor,
+        _squiggleGradient = squiggleGradient,
+        _amplitude = amplitude,
+        _wavelength = wavelength,
+        _strokeWidth = strokeWidth,
+        _gap = gap,
+        _animationStyle = animationStyle,
+        _speed = speed,
+        _phase = phase,
+        assert(amplitude == null || amplitude >= 0),
+        assert(
+          amplitude == null ||
+              (amplitude == amplitude && amplitude != double.infinity),
+        ),
+        assert(wavelength == null || wavelength > 0),
+        assert(
+          wavelength == null ||
+              (wavelength == wavelength && wavelength != double.infinity),
+        ),
+        assert(strokeWidth == null || strokeWidth > 0),
+        assert(
+          strokeWidth == null ||
+              (strokeWidth == strokeWidth && strokeWidth != double.infinity),
+        ),
+        assert(gap == null || gap >= 0),
+        assert(gap == null || (gap == gap && gap != double.infinity)),
         assert(maxLines == null || maxLines > 0),
-        assert(speed >= 0),
-        assert(speed == speed && speed != double.infinity),
+        assert(speed == null || speed >= 0),
+        assert(speed == null || (speed == speed && speed != double.infinity)),
+        assert(
+          phase == null ||
+              (phase == phase &&
+                  phase != double.infinity &&
+                  phase != double.negativeInfinity),
+        ),
         assert(fluidity >= 0 && fluidity <= 1),
         assert(fluidity == fluidity && fluidity != double.infinity),
         assert(stagger >= 0),
@@ -124,22 +240,23 @@ class SquigglyText extends StatefulWidget {
   /// The text style. Its color is also used for the squiggle by default.
   final TextStyle? style;
 
-  /// The squiggle color. Defaults to [style]'s color or the current theme.
-  final Color? squiggleColor;
+  /// The explicit squiggle color, before [squiggleStyle] is applied.
+  final Color? _squiggleColor;
 
-  /// The height of the underline wave in logical pixels.
-  ///
-  /// Controls the underline height. It does not change letter displacement.
-  final double amplitude;
+  /// The explicit squiggle gradient, before [squiggleStyle] is applied.
+  final Gradient? _squiggleGradient;
 
-  /// The distance between matching points in consecutive waves.
-  final double wavelength;
+  /// The explicit underline height, before [squiggleStyle] is applied.
+  final double? _amplitude;
 
-  /// The width of the squiggle stroke.
-  final double strokeWidth;
+  /// The explicit wavelength, before [squiggleStyle] is applied.
+  final double? _wavelength;
 
-  /// The distance between the text baseline and the squiggle.
-  final double gap;
+  /// The explicit stroke width, before [squiggleStyle] is applied.
+  final double? _strokeWidth;
+
+  /// The explicit gap, before [squiggleStyle] is applied.
+  final double? _gap;
 
   /// How the text is aligned within its available width.
   final TextAlign textAlign;
@@ -165,11 +282,73 @@ class SquigglyText extends StatefulWidget {
   /// An alternative label for accessibility services.
   final String? semanticsLabel;
 
+  /// The explicit animation style, before [squiggleStyle] is applied.
+  final SquigglyAnimationStyle? _animationStyle;
+
+  /// The explicit speed, before [squiggleStyle] is applied.
+  final double? _speed;
+
+  /// The explicit phase offset in turns, before [squiggleStyle] is applied.
+  final double? _phase;
+
+  /// Shared underline and animation values.
+  ///
+  /// Used only for fields the constructor left unset.
+  final SquigglyTextStyle? squiggleStyle;
+
+  /// The squiggle color.
+  ///
+  /// An explicit constructor color wins. Otherwise this is
+  /// [SquigglyTextStyle.squiggleColor] when set. Null means the underline uses
+  /// [style], then [DefaultTextStyle], then the theme body color, then black.
+  Color? get squiggleColor => _squiggleColor ?? squiggleStyle?.squiggleColor;
+
+  /// The squiggle stroke gradient.
+  ///
+  /// An explicit constructor gradient wins over [squiggleColor]. Null keeps a
+  /// solid [squiggleColor]. Glyph color stays on [style].
+  Gradient? get squiggleGradient =>
+      _squiggleGradient ?? squiggleStyle?.squiggleGradient;
+
+  /// The height of the underline wave in logical pixels.
+  ///
+  /// Controls the underline height. It does not change letter displacement.
+  /// Defaults to 2.
+  double get amplitude => _amplitude ?? squiggleStyle?.amplitude ?? 2;
+
+  /// The distance between matching points in consecutive waves.
+  ///
+  /// Defaults to 8.
+  double get wavelength => _wavelength ?? squiggleStyle?.wavelength ?? 8;
+
+  /// The width of the squiggle stroke.
+  ///
+  /// Defaults to 1.5.
+  double get strokeWidth => _strokeWidth ?? squiggleStyle?.strokeWidth ?? 1.5;
+
+  /// The distance between the text baseline and the squiggle.
+  ///
+  /// Defaults to 2.
+  double get gap => _gap ?? squiggleStyle?.gap ?? 2;
+
   /// The animation style. Defaults to static rendering.
-  final SquigglyAnimationStyle animationStyle;
+  SquigglyAnimationStyle get animationStyle =>
+      _animationStyle ??
+      squiggleStyle?.animationStyle ??
+      SquigglyAnimationStyle.none;
 
   /// The number of wave cycles per second.
-  final double speed;
+  ///
+  /// Defaults to 1.
+  double get speed => _speed ?? squiggleStyle?.speed ?? 1;
+
+  /// The animation phase offset in turns.
+  ///
+  /// Added to the wave sine and, when [speed] is positive, to the letter
+  /// shader clock. Defaults to 0, which keeps widgets with the same [speed]
+  /// in lockstep. Negative turns are allowed and still select a shader seed
+  /// from 0 through 4. [speed] of 0 does not start motion.
+  double get phase => _phase ?? squiggleStyle?.phase ?? 0;
 
   /// The normalized strength adjustment for lift and magnetic interaction.
   final double fluidity;
@@ -299,6 +478,8 @@ class _SquigglyTextState extends State<SquigglyText>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.animationStyle != widget.animationStyle ||
         oldWidget.speed != widget.speed ||
+        oldWidget.phase != widget.phase ||
+        oldWidget.squiggleGradient != widget.squiggleGradient ||
         oldWidget.hoverOnly != widget.hoverOnly ||
         oldWidget.hoverBehavior != widget.hoverBehavior ||
         oldWidget.hoverPreview != widget.hoverPreview ||
@@ -381,6 +562,7 @@ class _SquigglyTextState extends State<SquigglyText>
       text: widget.text,
       style: effectiveStyle,
       color: effectiveColor,
+      gradient: widget.squiggleGradient,
       amplitude: widget.amplitude,
       wavelength: widget.wavelength,
       strokeWidth: widget.strokeWidth,
@@ -396,6 +578,7 @@ class _SquigglyTextState extends State<SquigglyText>
       shader: _shader,
       devicePixelRatio: MediaQuery.of(context).devicePixelRatio,
       speed: widget.speed,
+      phase: widget.phase,
       animationStyle: widget.animationStyle,
       fluidity: widget.fluidity,
       stagger: widget.stagger,
@@ -448,6 +631,7 @@ class _SquigglyTextPainter extends CustomPainter {
     required this.text,
     required this.style,
     required this.color,
+    required this.gradient,
     required this.amplitude,
     required this.wavelength,
     required this.strokeWidth,
@@ -463,6 +647,7 @@ class _SquigglyTextPainter extends CustomPainter {
     required this.shader,
     required this.devicePixelRatio,
     required this.speed,
+    required this.phase,
     required this.animationStyle,
     required this.fluidity,
     required this.stagger,
@@ -492,6 +677,7 @@ class _SquigglyTextPainter extends CustomPainter {
   final String text;
   final TextStyle style;
   final Color color;
+  final Gradient? gradient;
   final double amplitude;
   final double wavelength;
   final double strokeWidth;
@@ -501,6 +687,7 @@ class _SquigglyTextPainter extends CustomPainter {
   final ui.FragmentShader? shader;
   final double devicePixelRatio;
   final double speed;
+  final double phase;
   final SquigglyAnimationStyle animationStyle;
   final double fluidity;
   final double stagger;
@@ -645,7 +832,22 @@ class _SquigglyTextPainter extends CustomPainter {
       if (width <= 0 || amplitude == 0) {
         continue;
       }
-      canvas.drawPath(_underlinePath(line, size.width), paint);
+      final lineGradient = gradient;
+      if (lineGradient != null) {
+        final baseline = line.baseline + gap + strokeWidth / 2;
+        paint.shader = lineGradient.createShader(
+          Rect.fromLTWH(
+            line.left,
+            baseline - amplitude,
+            width,
+            amplitude * 2,
+          ),
+          textDirection: textPainter.textDirection,
+        );
+      } else {
+        paint.shader = null;
+      }
+      canvas.drawPath(_underlinePath(line), paint);
     }
     canvas.restore();
   }
@@ -655,16 +857,16 @@ class _SquigglyTextPainter extends CustomPainter {
     _textAtlas = null;
   }
 
-  Path _underlinePath(LineMetrics line, double width) {
+  Path _underlinePath(LineMetrics line) {
     final path = Path();
-    final startX = _lineStart(line, width);
+    final startX = line.left;
     final baseline = line.baseline + gap + strokeWidth / 2;
     final lineWidth = line.width;
     if (_animatesWave) {
       final sample = math.max(1.5, wavelength / 8);
       double waveY(double x) =>
           baseline +
-          amplitude * math.sin(2 * math.pi * x / wavelength + _phase);
+          amplitude * math.sin(2 * math.pi * x / wavelength + _wavePhase);
       path.moveTo(startX, waveY(0));
       for (var x = sample; x < lineWidth; x += sample) {
         path.lineTo(startX + x, waveY(x));
@@ -689,7 +891,14 @@ class _SquigglyTextPainter extends CustomPainter {
     return path;
   }
 
-  double get _phase => elapsedSeconds.value * 2 * math.pi * speed;
+  double get _wavePhase =>
+      elapsedSeconds.value * 2 * math.pi * speed + phase * 2 * math.pi;
+
+  /// Maps [value] into `0 .. modulo - 1`, including when [value] is negative.
+  static int _positiveModulo(int value, int modulo) {
+    final remainder = value % modulo;
+    return remainder < 0 ? remainder + modulo : remainder;
+  }
 
   void _paintAtlas(Canvas canvas) {
     final atlas = _textAtlas;
@@ -711,8 +920,12 @@ class _SquigglyTextPainter extends CustomPainter {
 
     final fontSize = style.fontSize ?? 14;
     final frameDuration = 0.068 / math.max(speed, double.minPositive);
-    final seedIndex =
-        (elapsedSeconds.value / frameDuration).floor().remainder(5);
+    final seededElapsed =
+        speed > 0 ? elapsedSeconds.value + phase / speed : elapsedSeconds.value;
+    final seedIndex = _positiveModulo(
+      (seededElapsed / frameDuration).floor(),
+      5,
+    );
     final logicalScale = (seedIndex.isOdd ? 8.0 : 6.0) * (fontSize / 100.0);
     final mapScale = logicalScale.clamp(1.5, _maximumDisplacement);
     Offset? pointer = pointerPosition.value;
@@ -832,20 +1045,6 @@ class _SquigglyTextPainter extends CustomPainter {
     }
   }
 
-  double _lineStart(LineMetrics line, double width) {
-    switch (textPainter.textAlign) {
-      case TextAlign.center:
-        return (width - line.width) / 2;
-      case TextAlign.right:
-      case TextAlign.end:
-        return width - line.width;
-      case TextAlign.left:
-      case TextAlign.start:
-      case TextAlign.justify:
-        return 0;
-    }
-  }
-
   @override
   bool shouldRepaint(covariant _SquigglyTextPainter oldPainter) =>
       textPainter.text != oldPainter.textPainter.text ||
@@ -862,6 +1061,8 @@ class _SquigglyTextPainter extends CustomPainter {
       strokeWidth != oldPainter.strokeWidth ||
       gap != oldPainter.gap ||
       speed != oldPainter.speed ||
+      phase != oldPainter.phase ||
+      gradient != oldPainter.gradient ||
       animationStyle != oldPainter.animationStyle ||
       fluidity != oldPainter.fluidity ||
       stagger != oldPainter.stagger ||

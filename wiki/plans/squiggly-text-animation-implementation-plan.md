@@ -1,5 +1,9 @@
 # SquigglyText Animation Implementation Plan
 
+## Status
+
+This is the original slice plan. Letter animation did not ship as per-grapheme transforms. It shipped as the atlas and shader in [CodePen Glyph Displacement Plan](codepen-glyph-displacement-plan.md), inside `lib/flutter_squiggly_text.dart`. `wiki/decisions/` was not created.
+
 ## Scope and release strategy
 
 Implement the roadmap as additive, reviewable slices. The first release must preserve the current visual and semantic behavior when `animationStyle` is `SquigglyAnimationStyle.none`. No controller, pointer listener, per-grapheme cache, or animation repaint should exist in that default path.

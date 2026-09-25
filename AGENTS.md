@@ -21,8 +21,9 @@
 - Update tests and documentation when behavior or public APIs change.
 - Update `CHANGELOG.md` under `## Unreleased` for every user-visible,
   behavior, compatibility, dependency, workflow, or documentation-policy
-  change. Keep the root `# Changelog` title intact because the release
-  automation depends on it.
+  change. The release automation promotes those notes into the next version.
+  Keep the root `# Changelog` title intact because the release automation
+  depends on it.
 - Run the narrowest relevant validation after each implementation change, then run broader checks when practical.
 - Report assumptions, validation results, and any remaining risks in English.
 

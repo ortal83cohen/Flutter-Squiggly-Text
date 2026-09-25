@@ -36,16 +36,16 @@ test_case() {
                 if [ "$output" = "0.1.2" ]; then
                     # Assert written pubspec has version: 0.1.2
                     if grep -q "^version: 0.1.2$" "$temp_dir/pubspec.yaml"; then
-                        # Assert changelog line 3 equals expected format
-                        local line3
+                        # Assert the empty Unreleased section stays above the new version.
+                        local line3 line5 line7
                         line3=$(sed -n '3p' "$temp_dir/CHANGELOG.md")
-                        if [ "$line3" = "## 0.1.2 - 2026-01-02" ]; then
+                        line5=$(sed -n '5p' "$temp_dir/CHANGELOG.md")
+                        if [ "$line3" = "## Unreleased" ] && [ "$line5" = "## 0.1.2 - 2026-01-02" ]; then
                             # Check no square brackets
-                            if ! echo "$line3" | grep -q '\[' && ! echo "$line3" | grep -q '\]'; then
-                                # Assert line 5 equals expected bullet
-                                local line5
-                                line5=$(sed -n '5p' "$temp_dir/CHANGELOG.md")
-                                if [ "$line5" = "- Automated patch release from main." ]; then
+                            if ! echo "$line5" | grep -q '\[' && ! echo "$line5" | grep -q '\]'; then
+                                # No Unreleased notes, so the placeholder bullet remains.
+                                line7=$(sed -n '7p' "$temp_dir/CHANGELOG.md")
+                                if [ "$line7" = "- Automated patch release from main." ]; then
                                     # Check previous heading still appears
                                     if grep -q "## 0.1.1 - 2026-08-01" "$temp_dir/CHANGELOG.md"; then
                                         echo "PASS: $case_name"
@@ -54,13 +54,13 @@ test_case() {
                                         echo "FAIL: $case_name - previous heading missing"
                                     fi
                                 else
-                                    echo "FAIL: $case_name - wrong bullet line: '$line5'"
+                                    echo "FAIL: $case_name - wrong bullet line: '$line7'"
                                 fi
                             else
                                 echo "FAIL: $case_name - heading contains brackets"
                             fi
                         else
-                            echo "FAIL: $case_name - wrong heading line 3: '$line3'"
+                            echo "FAIL: $case_name - wrong heading lines: '$line3' / '$line5'"
                         fi
                     else
                         echo "FAIL: $case_name - pubspec version not updated correctly"
@@ -100,14 +100,14 @@ test_case() {
             if output=$(sh "$HELPER_SCRIPT" "$temp_dir" 2>/dev/null) && [ "$output" = "2.4.10" ]; then
                 # The fixture's leading blank line is preserved, so the title sits on line 2
                 # and the new section starts on line 4.
-                local title_count separator
+                local title_count
                 title_count=$(grep -c '^# Changelog$' "$temp_dir/CHANGELOG.md")
-                separator=$(sed -n '7p' "$temp_dir/CHANGELOG.md")
                 if [ "$title_count" = "1" ]; then
-                    if [ "$(sed -n '4p' "$temp_dir/CHANGELOG.md")" = "## 2.4.10 - 2026-01-02" ] \
-                       && [ "$(sed -n '6p' "$temp_dir/CHANGELOG.md")" = "- Automated patch release from main." ] \
-                       && [ -z "$separator" ] \
-                       && [ "$(sed -n '8p' "$temp_dir/CHANGELOG.md")" = "## 2.4.9 - 2026-08-01" ]; then
+                    if [ "$(sed -n '4p' "$temp_dir/CHANGELOG.md")" = "## Unreleased" ] \
+                       && [ "$(sed -n '6p' "$temp_dir/CHANGELOG.md")" = "## 2.4.10 - 2026-01-02" ] \
+                       && [ "$(sed -n '8p' "$temp_dir/CHANGELOG.md")" = "- Automated patch release from main." ] \
+                       && [ -z "$(sed -n '9p' "$temp_dir/CHANGELOG.md")" ] \
+                       && [ "$(sed -n '10p' "$temp_dir/CHANGELOG.md")" = "## 2.4.9 - 2026-08-01" ]; then
                         echo "PASS: $case_name"
                         return 0
                     else
@@ -115,6 +115,56 @@ test_case() {
                     fi
                 else
                     echo "FAIL: $case_name - title line count was $title_count"
+                fi
+            else
+                echo "FAIL: $case_name - helper failed or wrong output: '${output:-}'"
+            fi
+            ;;
+
+        "valid-promote-unreleased")
+            # Test: notes under ## Unreleased become the new version's notes, and Unreleased
+            # is left empty exactly once.
+            local output unreleased_count
+            if output=$(sh "$HELPER_SCRIPT" "$temp_dir" 2>/dev/null) && [ "$output" = "0.2.1" ]; then
+                unreleased_count=$(grep -c '^## Unreleased$' "$temp_dir/CHANGELOG.md")
+                if [ "$unreleased_count" = "1" ] \
+                   && [ "$(sed -n '3p' "$temp_dir/CHANGELOG.md")" = "## Unreleased" ] \
+                   && [ -z "$(sed -n '4p' "$temp_dir/CHANGELOG.md")" ] \
+                   && [ "$(sed -n '5p' "$temp_dir/CHANGELOG.md")" = "## 0.2.1 - 2026-01-02" ] \
+                   && [ "$(sed -n '7p' "$temp_dir/CHANGELOG.md")" = "- Added wave underline animation." ] \
+                   && [ "$(sed -n '8p' "$temp_dir/CHANGELOG.md")" = "- Fixed soft wrap for unlimited width." ] \
+                   && [ "$(sed -n '10p' "$temp_dir/CHANGELOG.md")" = "## 0.2.0 - 2026-08-01" ] \
+                   && ! grep -q "Automated patch release from main." "$temp_dir/CHANGELOG.md"; then
+                    echo "PASS: $case_name"
+                    return 0
+                else
+                    echo "FAIL: $case_name - Unreleased notes were not promoted"
+                    echo "----- changelog -----"
+                    cat "$temp_dir/CHANGELOG.md"
+                    echo "----- end -----"
+                fi
+            else
+                echo "FAIL: $case_name - helper failed or wrong output: '${output:-}'"
+            fi
+            ;;
+
+        "valid-empty-unreleased")
+            # Test: an empty Unreleased section still gets the placeholder and is not duplicated.
+            local output unreleased_count
+            if output=$(sh "$HELPER_SCRIPT" "$temp_dir" 2>/dev/null) && [ "$output" = "0.3.1" ]; then
+                unreleased_count=$(grep -c '^## Unreleased$' "$temp_dir/CHANGELOG.md")
+                if [ "$unreleased_count" = "1" ] \
+                   && [ "$(sed -n '3p' "$temp_dir/CHANGELOG.md")" = "## Unreleased" ] \
+                   && [ "$(sed -n '5p' "$temp_dir/CHANGELOG.md")" = "## 0.3.1 - 2026-01-02" ] \
+                   && [ "$(sed -n '7p' "$temp_dir/CHANGELOG.md")" = "- Automated patch release from main." ] \
+                   && [ "$(sed -n '9p' "$temp_dir/CHANGELOG.md")" = "## 0.3.0 - 2026-08-01" ]; then
+                    echo "PASS: $case_name"
+                    return 0
+                else
+                    echo "FAIL: $case_name - empty Unreleased was not preserved"
+                    echo "----- changelog -----"
+                    cat "$temp_dir/CHANGELOG.md"
+                    echo "----- end -----"
                 fi
             else
                 echo "FAIL: $case_name - helper failed or wrong output: '${output:-}'"
@@ -311,6 +361,7 @@ echo "Running bump_patch_version.sh tests..."
 failures=0
 
 for case_name in valid-patch valid-minor-untouched valid-leading-blank \
+                 valid-promote-unreleased valid-empty-unreleased \
                  reject-prerelease reject-two-components \
                  reject-no-changelog-title reject-missing-changelog reject-missing-pubspec \
                  reject-changelog-ahead; do

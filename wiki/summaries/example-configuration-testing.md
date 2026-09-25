@@ -25,8 +25,8 @@ integration review and additional regression coverage.
 
 ## Validation
 
-- 24 package tests passed.
-- 4 example interaction/accessibility tests passed.
+- 24 package tests passed at the time of this pass.
+- Example widget tests now also cover shared layout samples and fixed tremble ranges. See [Animated Layout Samples](animated-layout-samples.md).
 - Static analysis passed with no issues.
 - Release web build succeeded.
 - Final controls and single accessibility label checked in Chrome.

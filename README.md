@@ -13,10 +13,18 @@ and pointer interaction.
 
 ![SquigglyText example](screenshots/example.gif)
 
+Please [let us know about any problems](https://github.com/ortal83cohen/flutter_webmcp/issues/new/choose)
+you encounter; we would be happy to improve the library together with the
+community.
+
 ## Features
 
 - Static or animated underlines with configurable amplitude, wavelength, gap,
-	stroke width, color, and speed.
+	stroke width, color, gradient, speed, and phase.
+- Ready-made `spellcheck` and `handwriting` styles. An explicit constructor
+  argument overrides the matching preset field.
+- Underlines follow each laid-out line, including centered, end-aligned, and
+  right-to-left text.
 - CodePen-style full-run glyph displacement that preserves shaping, including
   combining marks, ligatures, RTL text, and emoji sequences.
 - Pointer interactions for highlighting, shrinking, enlarging, trembling a letter
@@ -107,6 +115,45 @@ Set `pauseWhenNotVisible` to pause automatic animation while the app is
 inactive or paused. This is an app-lifecycle signal, not viewport visibility
 detection.
 
+`phase` is an offset in turns. The default `0` keeps widgets that share a
+`speed` in lockstep. It shifts the underline wave and, when `speed` is
+positive, the letter shader. Negative turns are allowed. `speed: 0` does not
+start motion, so a phase value stays unused until animation is running.
+
+`squiggleGradient` paints the underline stroke along each laid-out line. A
+null gradient keeps the solid `squiggleColor`. Glyph color stays on `style`.
+
+```dart
+const SquigglyText(
+  'Hello Flutter',
+  animationStyle: SquigglyAnimationStyle.wave,
+  squiggleGradient: LinearGradient(colors: [Colors.red, Colors.orange]),
+  phase: 0.25,
+)
+```
+
+`SquigglyTextStyle.spellcheck` is a red static underline with the library
+geometry defaults. `SquigglyTextStyle.handwriting` animates letters in place,
+with amplitude `0` and speed `1`, and draws no underline.
+
+```dart
+const SquigglyText(
+  'teh',
+  squiggleStyle: SquigglyTextStyle.spellcheck,
+)
+
+const SquigglyText(
+  'Hello Flutter',
+  squiggleStyle: SquigglyTextStyle.handwriting,
+  speed: 1.5,
+)
+```
+
+Styled fields resolve in this order: an explicit constructor argument, then
+the matching non-null preset field, then the library default. A null argument
+is not explicit. In the handwriting sample above, `speed: 1.5` replaces the
+preset speed, and amplitude stays `0`.
+
 ## API overview
 
 The main public API is the `SquigglyText` widget:
@@ -114,8 +161,10 @@ The main public API is the `SquigglyText` widget:
 | Option | Purpose |
 | --- | --- |
 | `style` and `squiggleColor` | Configure text and underline appearance. |
+| `squiggleGradient` | Paints the underline stroke with a gradient along each laid-out line. Null keeps the solid `squiggleColor`. |
 | `amplitude`, `wavelength`, `strokeWidth`, and `gap` | Configure underline geometry. |
-| `animationStyle`, `speed`, `fluidity`, and `stagger` | Configure animation. `speed` controls wave cycles per second and the letter displacement cadence. |
+| `animationStyle`, `speed`, `phase`, `fluidity`, and `stagger` | Configure animation. `speed` controls wave cycles per second and the letter displacement cadence. `phase` is an offset in turns and defaults to 0. `speed: 0` leaves `phase` unused. |
+| `squiggleStyle` | Applies `SquigglyTextStyle.spellcheck` or `SquigglyTextStyle.handwriting`, or a custom `SquigglyTextStyle`. Explicit constructor arguments win over preset fields. |
 | `hoverBehavior`, `hoverRadius`, `hoverOnly`, `hoverScope`, and `hoverPreview` | Configure pointer, focus, range, and preview interaction. |
 | `respectReducedMotion` and `pauseWhenNotVisible` | Control when animation runs. |
 | `semanticsLabel` | Provide an alternative accessibility label. |

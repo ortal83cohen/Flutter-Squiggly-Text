@@ -89,21 +89,65 @@ fi
 # Prepare new files content in memory
 TEMP_PUBSPEC=$(mktemp)
 TEMP_CHANGELOG=$(mktemp)
+TEMP_STRIPPED=$(mktemp)
+TEMP_NOTES=$(mktemp)
+TEMP_TRIMMED=$(mktemp)
 
 # Clean up temp files on exit
-trap 'rm -f "$TEMP_PUBSPEC" "$TEMP_CHANGELOG"' EXIT
+trap 'rm -f "$TEMP_PUBSPEC" "$TEMP_CHANGELOG" "$TEMP_STRIPPED" "$TEMP_NOTES" "$TEMP_TRIMMED"' EXIT
 
 # Create new pubspec.yaml content
 sed "s/^version: .*/version: $NEW_VERSION/" "$PUBSPEC_PATH" > "$TEMP_PUBSPEC"
 
-# Create new CHANGELOG.md content: everything up to and including the title line, the new
-# section, then the untouched remainder.
+# Lift the ## Unreleased notes out of the changelog. A release promotes those notes into the
+# new version and leaves an empty Unreleased section for the next change.
+awk '
+    /^## Unreleased[[:space:]]*$/ && !captured {
+        capturing = 1
+        captured = 1
+        next
+    }
+    capturing && /^## / {
+        capturing = 0
+    }
+    capturing {
+        print > notes_path
+        next
+    }
+    { print }
+' notes_path="$TEMP_NOTES" "$CHANGELOG_PATH" > "$TEMP_STRIPPED"
+
+if awk '
+    { lines[NR] = $0 }
+    END {
+        start = 1
+        end = NR
+        while (start <= end && lines[start] ~ /^[[:space:]]*$/) start++
+        while (end >= start && lines[end] ~ /^[[:space:]]*$/) end--
+        if (start > end) exit 1
+        for (i = start; i <= end; i++) print lines[i]
+    }
+' "$TEMP_NOTES" > "$TEMP_TRIMMED"; then
+    HAS_NOTES=1
+else
+    HAS_NOTES=0
+fi
+
+# The title line is unchanged by removing Unreleased, which always follows it.
+# Create new CHANGELOG.md content: title, empty Unreleased, the new version section, then
+# the remainder.
 {
-    sed -n "1,${TITLE_LINE_NUMBER}p" "$CHANGELOG_PATH"
+    sed -n "1,${TITLE_LINE_NUMBER}p" "$TEMP_STRIPPED"
+    echo ""
+    echo "## Unreleased"
     echo ""
     echo "## $NEW_VERSION - $DATE"
     echo ""
-    echo "- Automated patch release from main."
+    if [ "$HAS_NOTES" -eq 1 ]; then
+        cat "$TEMP_TRIMMED"
+    else
+        echo "- Automated patch release from main."
+    fi
     echo ""
     # Remainder after the title, with its leading blank lines dropped so exactly one blank
     # line separates the new section from the previously top-most one.
@@ -111,7 +155,7 @@ sed "s/^version: .*/version: $NEW_VERSION/" "$PUBSPEC_PATH" > "$TEMP_PUBSPEC"
         NR <= title_line { next }
         !started && $0 ~ /^[[:space:]]*$/ { next }
         { started = 1; print }
-    ' "$CHANGELOG_PATH"
+    ' "$TEMP_STRIPPED"
 } > "$TEMP_CHANGELOG"
 
 # Validate that we successfully created new content

@@ -10,6 +10,20 @@
 
 ## Unreleased
 
+- Added an optional `squiggleGradient` for the underline stroke. A null gradient
+  keeps the solid `squiggleColor`. The gradient follows each laid-out line and
+  does not recolor the glyphs.
+- Added a `phase` offset in turns. The default `0` keeps matching animations in
+  lockstep. Negative turns are allowed, and a negative phase still selects a
+  letter-shader seed from 0 through 4. `speed: 0` does not start motion.
+- Added `SquigglyTextStyle` with `spellcheck` (red, static underline, library
+  geometry) and `handwriting` (letter motion, amplitude 0, speed 1). Explicit
+  constructor arguments override preset fields. Preset numbers use the same
+  finite-value checks as the widget.
+- Fixed underline placement so each squiggle starts at the laid-out line,
+  including centered, end-aligned, and right-to-left text.
+- Promoted notes under `## Unreleased` into the version section created by the
+  patch release workflow.
 - Restored the example animation GIF and related captured media after they were
   accidentally emptied in a previous commit.
 - Documented that agents must keep `CHANGELOG.md` updated for behavior,

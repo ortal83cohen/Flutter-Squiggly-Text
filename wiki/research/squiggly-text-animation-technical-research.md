@@ -1,5 +1,9 @@
 # SquigglyText Animation Technical Research
 
+## Status
+
+This note describes the widget before animation was added: a `StatelessWidget` whose painter always repainted. That is no longer the code. The shipped behavior is in [SquigglyText Implementation Summary](../summaries/squiggly-text-implementation-summary.md).
+
 ## Purpose
 
 This document turns the animation roadmap into implementation constraints. It is based on the current package implementation, the package minimums (`Dart >=3.0.0`, `Flutter >=3.10.0`), and the behavior that must remain stable for existing users.
