@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.1.9 - 2026-10-02
+
 - Pointed the README report link at this repository.
 - `SquigglyText` now applies the ambient `MediaQuery` text scaler during
   layout, matching `Text`. This requires Flutter 3.16 or newer because
