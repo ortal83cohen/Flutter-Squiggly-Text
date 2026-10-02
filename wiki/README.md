@@ -20,6 +20,11 @@ The implementation summary, configuration review, animation-quality research, an
 - [Animation Quality Improvement Research](research/animation-quality-improvement-research.md)
 - [User-Facing Feature Opportunities](research/user-facing-feature-opportunities.md)
 - [Later-Feature Feasibility](research/later-feature-feasibility.md)
+- [README Issue-Report Link](research/2026-10-02-readme-issue-link.md)
+- [Text Scaling](research/2026-10-02-text-scaling.md)
+- [Touch Pointer](research/2026-10-02-touch-pointer.md)
+- [Motion and Letter Amplitude](research/2026-10-02-motion-and-letter-amplitude.md)
+- [Example Showcase](research/2026-10-02-example-showcase.md)
 
 - [CodePen Glyph Displacement Plan](plans/codepen-glyph-displacement-plan.md)
 - [SquigglyText Visual Course Correction](plans/squiggly-text-visual-course-correction.md)

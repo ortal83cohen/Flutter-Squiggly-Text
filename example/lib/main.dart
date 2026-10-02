@@ -40,6 +40,7 @@ class _ExamplePageState extends State<ExamplePage> {
   );
   double _fontSize = 88;
   double _speed = 1;
+  SquigglyAnimationStyle _animationStyle = SquigglyAnimationStyle.wave;
   SquigglyHoverBehavior _hoverBehavior = SquigglyHoverBehavior.none;
   SquigglyHoverScope _hoverScope = SquigglyHoverScope.all;
   bool _previewOnIdle = true;
@@ -76,7 +77,8 @@ class _ExamplePageState extends State<ExamplePage> {
           ),
           const SizedBox(height: 4),
           Text(
-            'The handwriting face trembles in place. Adjust the text and its letter animation below.',
+            'Preview the underline wave, letter motion, and pointer effects. '
+            'Adjust the text and animation style below.',
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 20),
@@ -87,7 +89,7 @@ class _ExamplePageState extends State<ExamplePage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'Animated glyph preview',
+                    'Live preview',
                     style: theme.textTheme.labelLarge,
                   ),
                   const SizedBox(height: 8),
@@ -108,9 +110,9 @@ class _ExamplePageState extends State<ExamplePage> {
                         style: previewStyle.copyWith(
                           color: theme.colorScheme.onSurface,
                         ),
-                        amplitude: 0,
+                        amplitude: _underlineAmplitude,
                         textAlign: TextAlign.center,
-                        animationStyle: SquigglyAnimationStyle.letters,
+                        animationStyle: _animationStyle,
                         speed: _speed,
                         hoverBehavior: _hoverBehavior,
                         hoverPreview: _previewOnIdle,
@@ -155,6 +157,31 @@ class _ExamplePageState extends State<ExamplePage> {
                                 'Move the pointer over it to interact.'
                             : 'Move the pointer over the text or focus it with '
                                 'the keyboard to activate it.',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<SquigglyAnimationStyle>(
+                    initialValue: _animationStyle,
+                    decoration: const InputDecoration(
+                      labelText: 'Animation style',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: [
+                      for (final style in SquigglyAnimationStyle.values)
+                        DropdownMenuItem(
+                          value: style,
+                          child: Text(_animationStyleLabel(style)),
+                        ),
+                    ],
+                    onChanged: (style) {
+                      if (style != null) {
+                        setState(() => _animationStyle = style);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    _animationStyleHint,
                     style: theme.textTheme.bodySmall,
                   ),
                   const SizedBox(height: 12),
@@ -244,12 +271,49 @@ class _ExamplePageState extends State<ExamplePage> {
             ),
           ),
           const SizedBox(height: 28),
+          Text(
+            'Underline samples',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'A spellcheck mark and a gradient wave with its own phase. '
+            'These stay readable on a narrow screen and keep their own underline.',
+            style: theme.textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 16),
+          _ExampleSection(
+            title: 'Spellcheck preset',
+            child: SquigglyText(
+              'definately',
+              showSquiggle: true,
+              squiggleStyle: SquigglyTextStyle.spellcheck,
+              style: _showcaseStyle(theme),
+            ),
+          ),
+          _ExampleSection(
+            title: 'Gradient wave',
+            child: SquigglyText(
+              'Shifted wave',
+              showSquiggle: true,
+              style: _showcaseStyle(theme),
+              animationStyle: SquigglyAnimationStyle.wave,
+              amplitude: 4,
+              phase: 0.25,
+              squiggleGradient: const LinearGradient(
+                colors: [Color(0xFF00897B), Color(0xFFF4511E)],
+              ),
+            ),
+          ),
           Text('Layout and accessibility',
               style: theme.textTheme.titleLarge
                   ?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
           const Text(
             'These samples share the animation and pointer controls above. '
+            'A squiggle is drawn unless the style is letters only. '
             'Font size is scaled to half the main preview; sample text stays fixed.',
           ),
           const SizedBox(height: 16),
@@ -305,8 +369,8 @@ class _ExamplePageState extends State<ExamplePage> {
           height: 1.35,
           color: Theme.of(context).colorScheme.onSurface,
         ),
-        amplitude: 0,
-        animationStyle: SquigglyAnimationStyle.letters,
+        amplitude: _underlineAmplitude,
+        animationStyle: _animationStyle,
         speed: _speed,
         hoverBehavior: _hoverBehavior,
         hoverPreview: _previewOnIdle,
@@ -316,6 +380,41 @@ class _ExamplePageState extends State<ExamplePage> {
         textDirection: textDirection,
         textAlign: textAlign,
         semanticsLabel: semanticsLabel,
+      );
+
+  /// Letter-only motion keeps a flat baseline. Every other style, including
+  /// a static squiggle, uses a visible wave height.
+  double get _underlineAmplitude =>
+      _animationStyle == SquigglyAnimationStyle.letters ? 0 : 4;
+
+  String _animationStyleLabel(SquigglyAnimationStyle style) {
+    switch (style) {
+      case SquigglyAnimationStyle.none:
+        return 'none';
+      case SquigglyAnimationStyle.wave:
+        return 'wave';
+      case SquigglyAnimationStyle.letters:
+        return 'letters';
+      case SquigglyAnimationStyle.waveAndLetters:
+        return 'wave and letters';
+    }
+  }
+
+  String get _animationStyleHint => switch (_animationStyle) {
+        SquigglyAnimationStyle.none => 'The underline stays still.',
+        SquigglyAnimationStyle.wave => 'The underline moves as a wave.',
+        SquigglyAnimationStyle.letters =>
+          'Letters tremble in place on a clean baseline.',
+        SquigglyAnimationStyle.waveAndLetters =>
+          'The underline wave and the letters move together.',
+      };
+
+  TextStyle _showcaseStyle(ThemeData theme) => TextStyle(
+        fontFamily: 'AmaticSC',
+        fontWeight: FontWeight.w700,
+        fontSize: 36,
+        height: 1.1,
+        color: theme.colorScheme.onSurface,
       );
 
   String _hoverBehaviorLabel(SquigglyHoverBehavior behavior) {

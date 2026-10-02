@@ -16,6 +16,12 @@ uniform float uScopeTop;
 uniform float uScopeRight;
 uniform float uScopeBottom;
 uniform float uInteractionScale;
+// Smoothstep weight from the current seed toward the next, already shaped on
+// the CPU. Zero for the first three quarters of a seed step. Float index 18.
+uniform float uSeedBlend;
+// Displacement scale for the next seed (float index 19). The current seed
+// stays on uScale (float index 3). Peak offset is half of either scale.
+uniform float uNextScale;
 uniform sampler2D uText;
 out vec4 fragColor;
 
@@ -50,6 +56,15 @@ float turbulence(vec2 point, float seed) {
   return clamp(sum, 0.0, 1.0);
 }
 
+// SVG feDisplacementMap: scale * (channel - 0.5), peak ±scale/2.
+vec2 turbulenceOffset(vec2 noisePoint, float seed, float scale) {
+  vec2 noiseRG = vec2(
+    turbulence(noisePoint, seed),
+    turbulence(noisePoint + vec2(19.7, 47.3), seed + 13.0)
+  );
+  return scale * (noiseRG - 0.5);
+}
+
 void main() {
   vec2 fragment = FlutterFragCoord().xy;
   vec2 uv = fragment / uSize;
@@ -58,7 +73,10 @@ void main() {
     return;
   }
 
-  if (uScale == 0.0 && uHoverMode == 0.0 && uPointerLift == 0.0) {
+  if (uScale == 0.0 &&
+      uNextScale == 0.0 &&
+      uHoverMode == 0.0 &&
+      uPointerLift == 0.0) {
     fragColor = texture(uText, uv);
     return;
   }
@@ -121,13 +139,16 @@ void main() {
   }
 
   vec2 noisePoint = fragment * uBaseFrequency;
-  vec2 noiseRG = vec2(
-    turbulence(noisePoint, uSeed),
-    turbulence(noisePoint + vec2(19.7, 47.3), uSeed + 13.0)
-  );
-  vec2 offset = uScale * (noiseRG - 0.5) * 2.0;
-  if (uHoverScope != 0.0 && uPointerActive > 0.0) {
-    offset *= scopeInfluence;
+  // Autonomous tremor stays on the whole line. Pointer terms below add a
+  // local offset; they do not multiply this field by scopeInfluence.
+  vec2 offset = turbulenceOffset(noisePoint, uSeed, uScale);
+  if (uSeedBlend > 0.0) {
+    float nextSeed = mod(floor(uSeed + 0.5) + 1.0, 5.0);
+    offset = mix(
+      offset,
+      turbulenceOffset(noisePoint, nextSeed, uNextScale),
+      clamp(uSeedBlend, 0.0, 1.0)
+    );
   }
 
   if (uPointerLift != 0.0 && uPointerRadius > 0.0) {

@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -49,6 +50,103 @@ void main() {
     expect(painter.hoverScope, SquigglyHoverScope.letter);
     expect(tester.binding.transientCallbackCount, greaterThan(0));
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('touch pointer matches hover and clears when the finger lifts',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SquigglyText(
+            'Hello',
+            hoverBehavior: SquigglyHoverBehavior.trembleLetter,
+          ),
+        ),
+      ),
+    );
+
+    Offset? pointer() {
+      final dynamic painter = tester
+          .widget<CustomPaint>(
+            find.descendant(
+              of: find.byType(SquigglyText),
+              matching: find.byType(CustomPaint),
+            ),
+          )
+          .painter;
+      return painter.pointerPosition.value as Offset?;
+    }
+
+    expect(pointer(), isNull);
+    expect(tester.binding.transientCallbackCount, 0);
+
+    final center = tester.getCenter(find.byType(SquigglyText));
+    final hover = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await hover.addPointer(location: center);
+    await hover.moveTo(center);
+    await tester.pump();
+    final hovered = pointer();
+    expect(hovered, isNotNull);
+    expect(tester.binding.transientCallbackCount, greaterThan(0));
+
+    await hover.moveTo(center + const Offset(0, 800));
+    await tester.pump();
+    expect(pointer(), isNull);
+    expect(tester.binding.transientCallbackCount, 0);
+    await hover.removePointer();
+
+    final touch = await tester.createGesture(kind: PointerDeviceKind.touch);
+    await touch.down(center);
+    await tester.pump();
+    expect(pointer(), hovered);
+    expect(tester.binding.transientCallbackCount, greaterThan(0));
+
+    const delta = Offset(12, -4);
+    await touch.moveTo(center + delta);
+    await tester.pump();
+    expect(pointer(), hovered! + delta);
+    expect(tester.binding.transientCallbackCount, greaterThan(0));
+
+    await touch.up();
+    await tester.pump();
+    expect(pointer(), isNull);
+    expect(tester.binding.transientCallbackCount, 0);
+  });
+
+  testWidgets(
+      'mouse button up keeps the hover point while the pointer is inside',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: SquigglyText(
+          'Hello',
+          hoverBehavior: SquigglyHoverBehavior.liftLetters,
+        ),
+      ),
+    );
+
+    final center = tester.getCenter(find.byType(SquigglyText));
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: center);
+    await mouse.moveTo(center);
+    await tester.pump();
+
+    final dynamic painter = tester
+        .widget<CustomPaint>(
+          find.descendant(
+            of: find.byType(SquigglyText),
+            matching: find.byType(CustomPaint),
+          ),
+        )
+        .painter;
+    final hovered = painter.pointerPosition.value as Offset?;
+    expect(hovered, isNotNull);
+
+    await mouse.down(center);
+    await mouse.up();
+    await tester.pump();
+    expect(painter.pointerPosition.value, hovered);
+    await mouse.removePointer();
   });
 
   testWidgets('runtime range and preview changes invalidate painting',

@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+- Pointed the README report link at this repository.
+- `SquigglyText` now applies the ambient `MediaQuery` text scaler during
+  layout, matching `Text`. This requires Flutter 3.16 or newer because
+  `TextPainter.textScaler` did not exist in Flutter 3.10.
+- Added optional `textHeightBehavior`. Null uses
+  `DefaultTextStyle.of(context).textHeightBehavior`.
+- Pointer effects follow a finger or stylus as well as the mouse. Contact uses
+  the same local point as hover, clears when the touch ends or is canceled, and
+  a mouse click keeps the effect while the pointer stays inside.
+- Calmed letter motion. Displacement now follows SVG
+  `scale * (channel - 0.5)`, so the peak is half of the previous distance,
+  and small text is no longer lifted to a 1.5px floor.
+- Added optional `letterAmplitude`, the peak letter offset in logical pixels.
+  Null keeps the font-derived distance and does not change underline
+  `amplitude`.
+- Crossfaded turbulence seeds across the last quarter of each step so the
+  picture no longer jumps between seeds.
+- Kept autonomous letter tremor while a pointer hovers one letter or word.
+  Pointer effects add local motion instead of freezing the rest of the line.
+- The example demonstrates the underline wave, spellcheck preset, and gradient.
+
 ## 0.1.8 - 2026-09-25
 
 - Pointed the README example GIF at an absolute GitHub URL so pub.dev can show

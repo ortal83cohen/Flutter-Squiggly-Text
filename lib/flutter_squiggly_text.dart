@@ -9,6 +9,7 @@ import 'dart:ui' as ui;
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
@@ -179,12 +180,14 @@ class SquigglyText extends StatefulWidget {
     this.overflow = TextOverflow.clip,
     this.maxLines,
     this.strutStyle,
+    this.textHeightBehavior,
     this.semanticsLabel,
     SquigglyAnimationStyle? animationStyle,
     double? speed,
     double? phase,
     this.fluidity = 0.5,
     this.stagger = 0.2,
+    this.letterAmplitude,
     this.hoverBehavior = SquigglyHoverBehavior.none,
     this.hoverRadius = 48,
     this.hoverPreview = false,
@@ -232,6 +235,12 @@ class SquigglyText extends StatefulWidget {
         assert(fluidity == fluidity && fluidity != double.infinity),
         assert(stagger >= 0),
         assert(stagger == stagger && stagger != double.infinity),
+        assert(letterAmplitude == null || letterAmplitude >= 0),
+        assert(
+          letterAmplitude == null ||
+              (letterAmplitude == letterAmplitude &&
+                  letterAmplitude != double.infinity),
+        ),
         assert(hoverRadius > 0),
         assert(hoverRadius == hoverRadius && hoverRadius != double.infinity);
 
@@ -284,6 +293,13 @@ class SquigglyText extends StatefulWidget {
 
   /// The strut style used for line layout.
   final StrutStyle? strutStyle;
+
+  /// How [TextStyle.height] applies to the first and last lines.
+  ///
+  /// Null uses [DefaultTextStyle.textHeightBehavior] from the enclosing
+  /// [DefaultTextStyle]. The ambient text scaler still comes from
+  /// [MediaQuery.textScalerOf] and is not a constructor argument.
+  final TextHeightBehavior? textHeightBehavior;
 
   /// An alternative label for accessibility services.
   final String? semanticsLabel;
@@ -359,8 +375,18 @@ class SquigglyText extends StatefulWidget {
   /// The normalized strength adjustment for lift and magnetic interaction.
   final double fluidity;
 
-  /// Reserved for per-grapheme staggering; currently has no visual effect.
+  /// Reserved, unused compatibility field.
+  ///
+  /// Stored and validated so existing callers keep compiling. Letter motion is
+  /// one shared turbulence field, so this value does not stagger graphemes.
   final double stagger;
+
+  /// Peak autonomous letter offset in logical pixels.
+  ///
+  /// Null keeps the font-derived displacement. A set value is that peak and
+  /// does not change underline [amplitude]. Must be finite and at least 0.
+  /// Read only from this constructor argument, not from [SquigglyTextStyle].
+  final double? letterAmplitude;
 
   /// The pointer interaction style.
   final SquigglyHoverBehavior hoverBehavior;
@@ -407,6 +433,14 @@ class _SquigglyTextState extends State<SquigglyText>
   bool _isAnimating = false;
   bool _isFocused = false;
   bool _isAppVisible = true;
+
+  /// Active touch or stylus pointer. Mouse clicks are not tracked here, so
+  /// releasing a mouse button does not clear a hover that is still inside.
+  int? _contactPointer;
+
+  /// Latest mouse or stylus hover, in the same local coordinates as contact.
+  /// Restored when contact ends so a finger lift does not hide an active hover.
+  Offset? _hoverPosition;
   late final ValueNotifier<Offset?> _pointerPosition =
       ValueNotifier<Offset?>(null);
 
@@ -504,6 +538,52 @@ class _SquigglyTextState extends State<SquigglyText>
     _updateAnimation();
   }
 
+  /// Touch and pen contact. Mouse and trackpad stay on [MouseRegion].
+  bool _isContactPointer(PointerDeviceKind kind) {
+    return kind == PointerDeviceKind.touch ||
+        kind == PointerDeviceKind.stylus ||
+        kind == PointerDeviceKind.invertedStylus;
+  }
+
+  void _handleHover(PointerHoverEvent event) {
+    _hoverPosition = event.localPosition;
+    if (_contactPointer != null) {
+      return;
+    }
+    _setPointerPosition(event.localPosition);
+  }
+
+  void _handleHoverExit(PointerExitEvent _) {
+    _hoverPosition = null;
+    if (_contactPointer != null) {
+      return;
+    }
+    _setPointerPosition(null);
+  }
+
+  void _handleContactPointerDown(PointerDownEvent event) {
+    if (!_isContactPointer(event.kind) || _contactPointer != null) {
+      return;
+    }
+    _contactPointer = event.pointer;
+    _setPointerPosition(event.localPosition);
+  }
+
+  void _handleContactPointerMove(PointerMoveEvent event) {
+    if (event.pointer != _contactPointer) {
+      return;
+    }
+    _setPointerPosition(event.localPosition);
+  }
+
+  void _handleContactPointerEnd(PointerEvent event) {
+    if (event.pointer != _contactPointer) {
+      return;
+    }
+    _contactPointer = null;
+    _setPointerPosition(_hoverPosition);
+  }
+
   void _setFocus(bool focused) {
     if (_isFocused == focused) {
       return;
@@ -554,10 +634,16 @@ class _SquigglyTextState extends State<SquigglyText>
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
     final reducedMotion =
-        widget.respectReducedMotion && MediaQuery.of(context).disableAnimations;
-    final effectiveStyle =
-        DefaultTextStyle.of(context).style.merge(widget.style);
+        widget.respectReducedMotion && mediaQuery.disableAnimations;
+    final defaultTextStyle = DefaultTextStyle.of(context);
+    final effectiveStyle = defaultTextStyle.style.merge(widget.style);
+    // Match Text: ambient scaler only, and height behavior from the explicit
+    // argument or the enclosing DefaultTextStyle.
+    final textScaler = MediaQuery.textScalerOf(context);
+    final textHeightBehavior =
+        widget.textHeightBehavior ?? defaultTextStyle.textHeightBehavior;
     final effectiveColor = widget.squiggleColor ??
         effectiveStyle.color ??
         Theme.of(context).textTheme.bodyMedium?.color ??
@@ -580,15 +666,18 @@ class _SquigglyTextState extends State<SquigglyText>
       maxLines: widget.maxLines,
       overflow: widget.overflow,
       strutStyle: widget.strutStyle,
+      textScaler: textScaler,
+      textHeightBehavior: textHeightBehavior,
       elapsedSeconds: _elapsedSeconds,
       animationActive: _animationActive,
       shader: _shader,
-      devicePixelRatio: MediaQuery.of(context).devicePixelRatio,
+      devicePixelRatio: mediaQuery.devicePixelRatio,
       speed: widget.speed,
       phase: widget.phase,
       animationStyle: widget.animationStyle,
       fluidity: widget.fluidity,
       stagger: widget.stagger,
+      letterAmplitude: widget.letterAmplitude,
       pointerPosition: _pointerPosition,
       hoverBehavior:
           reducedMotion ? SquigglyHoverBehavior.none : widget.hoverBehavior,
@@ -619,10 +708,19 @@ class _SquigglyTextState extends State<SquigglyText>
       ),
     );
     if (_interactionConfigured) {
-      child = MouseRegion(
-        onHover: (event) => _setPointerPosition(event.localPosition),
-        onExit: (_) => _setPointerPosition(null),
-        child: child,
+      // Listener observes contact without entering the gesture arena, so an
+      // ancestor scroll view can still win the drag. Mouse hover and exit
+      // stay on MouseRegion.
+      child = Listener(
+        onPointerDown: _handleContactPointerDown,
+        onPointerMove: _handleContactPointerMove,
+        onPointerUp: _handleContactPointerEnd,
+        onPointerCancel: _handleContactPointerEnd,
+        child: MouseRegion(
+          onHover: _handleHover,
+          onExit: _handleHoverExit,
+          child: child,
+        ),
       );
     }
     return Focus(
@@ -631,6 +729,78 @@ class _SquigglyTextState extends State<SquigglyText>
       child: child,
     );
   }
+}
+
+/// Uploaded displacement scale for one turbulence seed.
+///
+/// The shader offset is `scale * (noise - 0.5)`, so the peak travel is half
+/// of this value. [letterAmplitude], when set, is that peak for every seed.
+/// Otherwise the scale is the CodePen table, `(6 or 8) * fontSize / 100`,
+/// with no 1.5px floor, and it is capped so the peak stays at or below
+/// `0.06 * fontSize`.
+///
+/// [hoverScope] and [pointerActive] do not change the result. Pointer effects
+/// add a local term in the shader and leave this autonomous scale intact.
+@visibleForTesting
+double squigglyLetterMapScale({
+  required double fontSize,
+  required int seedIndex,
+  double? letterAmplitude,
+  SquigglyHoverScope hoverScope = SquigglyHoverScope.all,
+  bool pointerActive = false,
+}) {
+  final double scale;
+  if (letterAmplitude != null) {
+    scale = letterAmplitude * 2.0;
+  } else {
+    final codepenScale = seedIndex.isOdd ? 8.0 : 6.0;
+    final logicalScale = codepenScale * (fontSize / 100.0);
+    final scaleCeiling = math.max(0.0, fontSize * 0.12);
+    scale = logicalScale.clamp(0.0, scaleCeiling);
+  }
+  // Every pointer scope, including an active letter hover, keeps this scale.
+  switch (hoverScope) {
+    case SquigglyHoverScope.all:
+    case SquigglyHoverScope.word:
+    case SquigglyHoverScope.letter:
+      return pointerActive ? scale : scale;
+  }
+}
+
+/// Peak letter offset in logical pixels for one turbulence seed.
+@visibleForTesting
+double squigglyLetterPeakOffset({
+  required double fontSize,
+  required int seedIndex,
+  double? letterAmplitude,
+  SquigglyHoverScope hoverScope = SquigglyHoverScope.all,
+  bool pointerActive = false,
+}) {
+  return squigglyLetterMapScale(
+        fontSize: fontSize,
+        seedIndex: seedIndex,
+        letterAmplitude: letterAmplitude,
+        hoverScope: hoverScope,
+        pointerActive: pointerActive,
+      ) /
+      2.0;
+}
+
+/// Smoothstep weight from the current turbulence seed toward the next one.
+///
+/// [fractionalStep] is the position within the current seed hold, in `0..1`.
+/// The weight stays 0 until the last quarter of the hold. The shader mixes
+/// with this value directly and does not smoothstep again.
+@visibleForTesting
+double squigglySeedBlend(double fractionalStep) {
+  final raw = ((fractionalStep - 0.75) / 0.25).clamp(0.0, 1.0);
+  return raw * raw * (3.0 - 2.0 * raw);
+}
+
+/// Logical padding reserved for letter travel: `ceil(peak) + 2`.
+@visibleForTesting
+double squigglyLetterDisplacementPad(double peak) {
+  return peak.ceilToDouble() + 2.0;
 }
 
 class _SquigglyTextPainter extends CustomPainter {
@@ -650,6 +820,8 @@ class _SquigglyTextPainter extends CustomPainter {
     required int? maxLines,
     required TextOverflow overflow,
     required StrutStyle? strutStyle,
+    required TextScaler textScaler,
+    required TextHeightBehavior? textHeightBehavior,
     required this.elapsedSeconds,
     required this.animationActive,
     required this.shader,
@@ -659,6 +831,7 @@ class _SquigglyTextPainter extends CustomPainter {
     required this.animationStyle,
     required this.fluidity,
     required this.stagger,
+    required this.letterAmplitude,
     required this.pointerPosition,
     required this.hoverBehavior,
     required this.hoverRadius,
@@ -672,6 +845,8 @@ class _SquigglyTextPainter extends CustomPainter {
           maxLines: maxLines,
           ellipsis: overflow == TextOverflow.ellipsis ? '\u2026' : null,
           strutStyle: strutStyle,
+          textScaler: textScaler,
+          textHeightBehavior: textHeightBehavior,
         ),
         super(
           repaint: Listenable.merge(<Listenable>[
@@ -700,6 +875,7 @@ class _SquigglyTextPainter extends CustomPainter {
   final SquigglyAnimationStyle animationStyle;
   final double fluidity;
   final double stagger;
+  final double? letterAmplitude;
   final ValueListenable<Offset?> pointerPosition;
   final SquigglyHoverBehavior hoverBehavior;
   final double hoverRadius;
@@ -731,6 +907,8 @@ class _SquigglyTextPainter extends CustomPainter {
       maxLines: textPainter.maxLines,
       overflow: textPainter.ellipsis,
       strutStyle: textPainter.strutStyle,
+      textScaler: textPainter.textScaler,
+      textHeightBehavior: textPainter.textHeightBehavior,
       devicePixelRatio: devicePixelRatio,
       padding: _atlasOrigin,
       width: textPainter.width,
@@ -763,9 +941,25 @@ class _SquigglyTextPainter extends CustomPainter {
     }
   }
 
-  double get _maximumDisplacement {
+  /// Upper bound for pointer interaction scale. Letter travel does not use the
+  /// old 1.5px floor; see [squigglyLetterMapScale].
+  double get _interactionScaleBudget {
     final fontSize = style.fontSize ?? 14;
     return math.max(1.5, fontSize * 0.12);
+  }
+
+  bool get _reservesLetterTravel =>
+      animationStyle == SquigglyAnimationStyle.letters ||
+      animationStyle == SquigglyAnimationStyle.waveAndLetters;
+
+  /// Strongest autonomous peak the atlas must contain.
+  double get _letterPeak {
+    final fontSize = style.fontSize ?? 14;
+    return squigglyLetterPeakOffset(
+      fontSize: fontSize,
+      seedIndex: 1,
+      letterAmplitude: letterAmplitude,
+    );
   }
 
   bool get _animatesLetters =>
@@ -782,8 +976,11 @@ class _SquigglyTextPainter extends CustomPainter {
     if (!_usesAtlas) return 0;
     final pointerRoom = hoverBehavior == SquigglyHoverBehavior.none
         ? 0.0
-        : math.max(7.0, (1 + fluidity) * _maximumDisplacement);
-    return (_maximumDisplacement + pointerRoom).ceilToDouble() + 2;
+        : math.max(7.0, (1 + fluidity) * _interactionScaleBudget);
+    final letterPad = squigglyLetterDisplacementPad(
+      _reservesLetterTravel ? _letterPeak : 0,
+    );
+    return letterPad + pointerRoom;
   }
 
   double get _hoverScale => switch (hoverBehavior) {
@@ -937,12 +1134,25 @@ class _SquigglyTextPainter extends CustomPainter {
     final frameDuration = 0.068 / math.max(speed, double.minPositive);
     final seededElapsed =
         speed > 0 ? elapsedSeconds.value + phase / speed : elapsedSeconds.value;
-    final seedIndex = _positiveModulo(
-      (seededElapsed / frameDuration).floor(),
-      5,
-    );
-    final logicalScale = (seedIndex.isOdd ? 8.0 : 6.0) * (fontSize / 100.0);
-    final mapScale = logicalScale.clamp(1.5, _maximumDisplacement);
+    final seedPosition = seededElapsed / frameDuration;
+    final seedIndex = _positiveModulo(seedPosition.floor(), 5);
+    final fractionalStep = seedPosition - seedPosition.floorToDouble();
+    final seedBlend = squigglySeedBlend(fractionalStep);
+    final nextSeed = _positiveModulo(seedIndex + 1, 5);
+    final mapScale = _animatesLetters
+        ? squigglyLetterMapScale(
+            fontSize: fontSize,
+            seedIndex: seedIndex,
+            letterAmplitude: letterAmplitude,
+          )
+        : 0.0;
+    final nextScale = _animatesLetters
+        ? squigglyLetterMapScale(
+            fontSize: fontSize,
+            seedIndex: nextSeed,
+            letterAmplitude: letterAmplitude,
+          )
+        : 0.0;
     Offset? pointer = pointerPosition.value;
     if (pointer == null && hoverPreview) {
       pointer = Offset(
@@ -978,7 +1188,10 @@ class _SquigglyTextPainter extends CustomPainter {
       ..setFloat(14, scopedRect?.top ?? -1)
       ..setFloat(15, scopedRect?.right ?? -1)
       ..setFloat(16, scopedRect?.bottom ?? -1)
-      ..setFloat(17, (6.0 * fontSize / 100).clamp(1.5, _maximumDisplacement))
+      ..setFloat(17, (6.0 * fontSize / 100).clamp(1.5, _interactionScaleBudget))
+      // 18: smoothstep weight toward the next seed. 19: that seed's scale.
+      ..setFloat(18, _animatesLetters ? seedBlend : 0)
+      ..setFloat(19, nextScale)
       ..setImageSampler(0, atlas);
     paint.shader = fragmentShader;
     canvas.drawRect(
@@ -1069,6 +1282,9 @@ class _SquigglyTextPainter extends CustomPainter {
       textPainter.maxLines != oldPainter.textPainter.maxLines ||
       textPainter.ellipsis != oldPainter.textPainter.ellipsis ||
       textPainter.strutStyle != oldPainter.textPainter.strutStyle ||
+      textPainter.textScaler != oldPainter.textPainter.textScaler ||
+      textPainter.textHeightBehavior !=
+          oldPainter.textPainter.textHeightBehavior ||
       style != oldPainter.style ||
       color != oldPainter.color ||
       showSquiggle != oldPainter.showSquiggle ||
@@ -1082,6 +1298,7 @@ class _SquigglyTextPainter extends CustomPainter {
       animationStyle != oldPainter.animationStyle ||
       fluidity != oldPainter.fluidity ||
       stagger != oldPainter.stagger ||
+      letterAmplitude != oldPainter.letterAmplitude ||
       pointerPosition != oldPainter.pointerPosition ||
       hoverBehavior != oldPainter.hoverBehavior ||
       hoverRadius != oldPainter.hoverRadius ||
@@ -1104,6 +1321,8 @@ class _AtlasLayoutKey {
     required this.maxLines,
     required this.overflow,
     required this.strutStyle,
+    required this.textScaler,
+    required this.textHeightBehavior,
     required this.devicePixelRatio,
     required this.padding,
     required this.width,
@@ -1119,6 +1338,8 @@ class _AtlasLayoutKey {
   final int? maxLines;
   final String? overflow;
   final StrutStyle? strutStyle;
+  final TextScaler textScaler;
+  final TextHeightBehavior? textHeightBehavior;
   final double devicePixelRatio;
   final Offset padding;
   final double width;
@@ -1136,6 +1357,8 @@ class _AtlasLayoutKey {
         maxLines == other.maxLines &&
         overflow == other.overflow &&
         strutStyle == other.strutStyle &&
+        textScaler == other.textScaler &&
+        textHeightBehavior == other.textHeightBehavior &&
         devicePixelRatio == other.devicePixelRatio &&
         padding == other.padding &&
         width == other.width &&
@@ -1153,6 +1376,8 @@ class _AtlasLayoutKey {
         maxLines,
         overflow,
         strutStyle,
+        textScaler,
+        textHeightBehavior,
         devicePixelRatio,
         padding,
         width,

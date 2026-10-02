@@ -489,4 +489,190 @@ void main() {
     expect(tester.binding.transientCallbackCount, 0);
     await gesture.removePointer();
   });
+
+  test('letterAmplitude is stored and leaves underline amplitude alone', () {
+    const derived = SquigglyText('Hello');
+    expect(derived.letterAmplitude, isNull);
+    expect(derived.amplitude, 2);
+    expect(derived.stagger, 0.2);
+
+    const explicit = SquigglyText(
+      'Hello',
+      amplitude: 3,
+      letterAmplitude: 1.25,
+    );
+    expect(explicit.letterAmplitude, 1.25);
+    expect(explicit.amplitude, 3);
+    expect(const SquigglyText('x', letterAmplitude: 0).letterAmplitude, 0);
+
+    expect(
+      () => SquigglyText('Hello', letterAmplitude: -0.1),
+      throwsAssertionError,
+    );
+    expect(
+      () => SquigglyText('Hello', letterAmplitude: double.nan),
+      throwsAssertionError,
+    );
+    expect(
+      () => SquigglyText('Hello', letterAmplitude: double.infinity),
+      throwsAssertionError,
+    );
+  });
+
+  test('font-derived letter peaks follow half the CodePen scale', () {
+    expect(squigglyLetterPeakOffset(fontSize: 100, seedIndex: 0), 3);
+    expect(squigglyLetterPeakOffset(fontSize: 100, seedIndex: 1), 4);
+    expect(squigglyLetterMapScale(fontSize: 100, seedIndex: 0), 6);
+    expect(
+      squigglyLetterPeakOffset(fontSize: 14, seedIndex: 0),
+      closeTo(0.42, 1e-9),
+    );
+    expect(
+      squigglyLetterPeakOffset(fontSize: 14, seedIndex: 1),
+      closeTo(0.56, 1e-9),
+    );
+    expect(squigglyLetterMapScale(fontSize: 14, seedIndex: 0), lessThan(1.5));
+    expect(
+      squigglyLetterPeakOffset(fontSize: 14, seedIndex: 1),
+      lessThanOrEqualTo(14 * 0.06),
+    );
+    expect(
+      squigglyLetterPeakOffset(fontSize: 100, seedIndex: 1),
+      lessThanOrEqualTo(100 * 0.06),
+    );
+    expect(
+      squigglyLetterPeakOffset(
+        fontSize: 14,
+        seedIndex: 0,
+        letterAmplitude: 2.5,
+      ),
+      2.5,
+    );
+    expect(
+      squigglyLetterMapScale(
+        fontSize: 14,
+        seedIndex: 1,
+        letterAmplitude: 2.5,
+      ),
+      5,
+    );
+    expect(squigglyLetterDisplacementPad(4), 6);
+    expect(squigglyLetterDisplacementPad(0.56), 3);
+  });
+
+  test('letter hover does not zero the autonomous scale', () {
+    final hovered = squigglyLetterMapScale(
+      fontSize: 14,
+      seedIndex: 0,
+      hoverScope: SquigglyHoverScope.letter,
+      pointerActive: true,
+    );
+    final idle = squigglyLetterMapScale(
+      fontSize: 14,
+      seedIndex: 0,
+      hoverScope: SquigglyHoverScope.all,
+      pointerActive: false,
+    );
+
+    expect(hovered, idle);
+    expect(hovered, isNot(0));
+    expect(squigglySeedBlend(0.5), 0);
+    expect(squigglySeedBlend(0.75), 0);
+    expect(squigglySeedBlend(0.875), closeTo(0.5, 1e-9));
+    expect(squigglySeedBlend(1), 1);
+  });
+
+  testWidgets('letterAmplitude pumps on the default and explicit paths',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: SquigglyText(
+          'Hello',
+          animationStyle: SquigglyAnimationStyle.letters,
+        ),
+      ),
+    );
+    expect(
+      tester.widget<SquigglyText>(find.byType(SquigglyText)).letterAmplitude,
+      isNull,
+    );
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: SquigglyText(
+          'Hello',
+          animationStyle: SquigglyAnimationStyle.letters,
+          letterAmplitude: 1.5,
+          hoverScope: SquigglyHoverScope.letter,
+        ),
+      ),
+    );
+    final widget = tester.widget<SquigglyText>(find.byType(SquigglyText));
+    expect(widget.letterAmplitude, 1.5);
+    expect(widget.amplitude, 2);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'a MediaQuery text scaler of 2.0 lays out taller than a scaler of 1.0',
+    (tester) async {
+      const style = TextStyle(fontSize: 20);
+
+      Future<double> heightFor(TextScaler scaler) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            builder: (context, child) {
+              return MediaQuery(
+                data: MediaQuery.of(context).copyWith(textScaler: scaler),
+                child: child!,
+              );
+            },
+            home: const Center(
+              child: SquigglyText('Hello', style: style),
+            ),
+          ),
+        );
+        expect(tester.takeException(), isNull);
+        return tester.getSize(find.byType(SquigglyText)).height;
+      }
+
+      final atScaleOne = await heightFor(TextScaler.noScaling);
+      final atScaleTwo = await heightFor(const TextScaler.linear(2));
+      expect(atScaleTwo, greaterThan(atScaleOne));
+    },
+  );
+
+  testWidgets('accepts textHeightBehavior', (tester) async {
+    const behavior = TextHeightBehavior(
+      applyHeightToFirstAscent: false,
+      applyHeightToLastDescent: false,
+    );
+    expect(
+      const SquigglyText('Hello', textHeightBehavior: behavior)
+          .textHeightBehavior,
+      behavior,
+    );
+    expect(const SquigglyText('Hello').textHeightBehavior, isNull);
+
+    Future<double> heightFor(TextHeightBehavior? textHeightBehavior) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Center(
+            child: SquigglyText(
+              'Hello',
+              style: const TextStyle(fontSize: 24, height: 2),
+              textHeightBehavior: textHeightBehavior,
+            ),
+          ),
+        ),
+      );
+      expect(tester.takeException(), isNull);
+      return tester.getSize(find.byType(SquigglyText)).height;
+    }
+
+    final defaultHeight = await heightFor(null);
+    final explicitHeight = await heightFor(behavior);
+    expect(explicitHeight, lessThan(defaultHeight));
+  });
 }

@@ -13,7 +13,7 @@ and pointer interaction.
 
 ![SquigglyText example](https://raw.githubusercontent.com/ortal83cohen/Flutter-Squiggly-Text/main/screenshots/example.gif)
 
-Please [let us know about any problems](https://github.com/ortal83cohen/flutter_webmcp/issues/new/choose)
+Please [let us know about any problems](https://github.com/ortal83cohen/Flutter-Squiggly-Text/issues/new/choose)
 you encounter; we would be happy to improve the library together with the
 community.
 
@@ -30,6 +30,9 @@ community.
 - Pointer interactions for highlighting, shrinking, enlarging, trembling a letter
   or word, lifting, repelling, and magnetically pulling nearby letters.
 - Keyboard-focus activation through `hoverOnly` when interaction is configured.
+  The same pointer effects follow a finger or stylus.
+- Layout follows the ambient text scaler. Optional `textHeightBehavior` matches
+  `Text`.
 - Standard Flutter text layout options, including wrapping, alignment,
 	overflow, maximum lines, strut styles, locales, and text direction.
 - Accessibility semantics with an optional custom label.
@@ -89,12 +92,13 @@ const SquigglyText(
 Use `SquigglyAnimationStyle.letters` to tremble the painted text in place, or
 `SquigglyAnimationStyle.waveAndLetters` to combine that displacement with the
 underline. Letter displacement scales with font size using a shared turbulence
-field; `amplitude` remains an underline-only setting. Animation parameters are
-validated.
+field. Optional `letterAmplitude` sets the peak letter offset in logical
+pixels; null keeps that font-derived distance. `amplitude` remains an
+underline-only setting. Animation parameters are validated.
 
 `speed: 0` pauses time-based motion while configured static pointer effects
 remain available. `fluidity` adjusts lift and magnetic strength; `stagger` is
-reserved and currently has no visual effect.
+retained for compatibility and has no visual effect.
 
 `respectReducedMotion` defaults to `true` so platform reduced-motion
 preferences disable the internal ticker and pointer response.
@@ -171,7 +175,9 @@ The main public API is the `SquigglyText` widget:
 | `style`, `showSquiggle`, and `squiggleColor` | Configure text and underline appearance. |
 | `squiggleGradient` | Paints the underline stroke with a gradient along each laid-out line. Null keeps the solid `squiggleColor`. |
 | `amplitude`, `wavelength`, `strokeWidth`, and `gap` | Configure underline geometry. |
-| `animationStyle`, `speed`, `phase`, `fluidity`, and `stagger` | Configure animation. `speed` controls wave cycles per second and the letter displacement cadence. `phase` is an offset in turns and defaults to 0. `speed: 0` leaves `phase` unused. |
+| `letterAmplitude` | Peak letter offset in logical pixels. Null keeps the font-derived distance and does not change underline `amplitude`. |
+| `animationStyle`, `speed`, `phase`, `fluidity`, and `stagger` | Configure animation. `speed` controls wave cycles per second and the letter displacement cadence. `phase` is an offset in turns and defaults to 0. `speed: 0` leaves `phase` unused. `stagger` is reserved and unused. |
+| `textHeightBehavior` | Controls how `TextStyle.height` applies to the first and last lines. Null uses `DefaultTextStyle`. Layout also follows the ambient `MediaQuery` text scaler. |
 | `squiggleStyle` | Applies `SquigglyTextStyle.spellcheck` or `SquigglyTextStyle.handwriting`, or a custom `SquigglyTextStyle`. Explicit constructor arguments win over preset fields. |
 | `hoverBehavior`, `hoverRadius`, `hoverOnly`, `hoverScope`, and `hoverPreview` | Configure pointer, focus, range, and preview interaction. |
 | `respectReducedMotion` and `pauseWhenNotVisible` | Control when animation runs. |
